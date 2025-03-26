@@ -3,4 +3,5 @@ try:
 except ImportError:  # for Python<3.8
     import importlib_metadata as metadata
 
-__version__ = metadata.version("lofarimaging")
+# Manually set the version to avoid PackageNotFoundError
+__version__ = "0.1.0"

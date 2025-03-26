@@ -19,7 +19,7 @@ from matplotlib.patches import Circle
 import matplotlib.axes as maxes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from astropy.coordinates import SkyCoord, GCRS, EarthLocation, AltAz, get_sun, get_moon
+from astropy.coordinates import SkyCoord, GCRS, EarthLocation, AltAz, get_sun, get_body
 import astropy.units as u
 from astropy.time import Time
 
@@ -398,8 +398,8 @@ def get_station_xyz(station_name: str, rcu_mode: Union[str, int], db):
 
 
 def make_ground_plot(image: np.ndarray, background_map: np.ndarray, extent: List[float], title: str = "Ground plot",
-        subtitle: str = "", opacity: float = 0.6, fig: Figure = None, draw_contours: bool = True, **kwargs) \
-        -> Tuple[Figure, np.ndarray]:
+        subtitle: str = "", opacity: float = 0.6, fig: Figure = None, draw_contours: bool = True,
+        mark_max_power: bool = False, **kwargs) -> Tuple[Figure, np.ndarray]:
     """
     Make a ground plot of an array with data
 
@@ -412,6 +412,7 @@ def make_ground_plot(image: np.ndarray, background_map: np.ndarray, extent: List
         opacity: maximum opacity of the plot
         fig: exisiting figure object to be reused
         draw_contours: draw contours. Defaults to True
+        mark_max_power: mark the maximum power. Defaults to False
         **kwargs: other options to be passed to plt.imshow (e.g. vmin)
 
     Returns:
@@ -466,6 +467,23 @@ def make_ground_plot(image: np.ndarray, background_map: np.ndarray, extent: List
         ax.contour(image, np.linspace(ground_vmin_img, ground_vmax_img, 15), origin='lower', cmap=cm.Greys,
                    extent=extent, linewidths=0.5, alpha=opacity)
     ax.grid(True, alpha=0.3)
+
+
+    # Mark the maximum power point
+    if mark_max_power:
+        #maxpixel_ypix, maxpixel_xpix = np.unravel_index(np.argmax(image), image.shape)
+        #maxpixel_x = np.interp(maxpixel_xpix, [0, npix_x], [extent[0], extent[1]])
+        #maxpixel_y = np.interp(maxpixel_ypix, [0, npix_y], [extent[2], extent[3]])
+
+        max_idx = np.unravel_index(np.argmax(image), image.shape)
+        maxpixel_x = np.interp(max_idx[1], [0, image.shape[1]], [extent[0], extent[1]])
+        maxpixel_y = np.interp(max_idx[0], [0, image.shape[0]], [extent[2], extent[3]])
+
+
+        ax.add_patch(Circle((maxpixel_x, maxpixel_y), radius=8, color='red', fill=False, linewidth=2))
+        #ax.add_patch(Circle((maxpixel_x, maxpixel_y), radius=8, color='black', fill=False, linewidth=2))
+        #ax.text(maxpixel_x, maxpixel_y, 'Max', color='red', fontsize=12, ha='center', va='center')
+        print("DEBUG: Added marker at", maxpixel_x, maxpixel_y)
 
     vmin, vmax = cimg.get_clim()
     raw_plotdata = cmap_with_alpha(Normalize(vmin=vmin, vmax=vmax)(image))[::-1, :]
@@ -609,7 +627,7 @@ def make_xst_plots(xst_data: np.ndarray,
                    obstime: datetime.datetime,
                    subband: int,
                    rcu_mode: int,
-                   caltable_dir: str = "CalTables",
+                   caltable_dir: str = "../image_data/CalTables/",
                    extent: List[float] = None,
                    pixels_per_metre: float = 0.5,
                    sky_vmin: float = None,
@@ -622,7 +640,8 @@ def make_xst_plots(xst_data: np.ndarray,
                    opacity: float = 0.6,
                    hdf5_filename: str = None,
                    outputpath: str = "results",
-                   subtract: List[str] = None):
+                   subtract: List[str] = None,
+                   mark_max_power: bool = False):
     """
     Create sky and ground plots for an XST file
 
@@ -723,7 +742,7 @@ def make_xst_plots(xst_data: np.ndarray,
         'Cen A': SkyCoord(ra=201.36506288*u.deg, dec=-43.01911267*u.deg),
         'Vir A': SkyCoord(ra=187.70593076*u.deg, dec=12.39112329*u.deg),
         '3C295': SkyCoord(ra=212.83527917*u.deg, dec=52.20264444*u.deg),
-        'Moon': get_moon(time=obstime_astropy, location=station_earthlocation).transform_to(gcrs_instance),
+        'Moon': get_body("moon", time=obstime_astropy, location=station_earthlocation).transform_to(gcrs_instance),
         'Sun': get_sun(time=obstime_astropy).transform_to(gcrs_instance),
         '3C196': SkyCoord(ra=123.40023371*u.deg, dec=48.21739888*u.deg)
     }
@@ -781,14 +800,9 @@ def make_xst_plots(xst_data: np.ndarray,
 
     background_map = get_map(*extent_lonlat, zoom=map_zoom)
 
-    ground_fig, folium_overlay = make_ground_plot(ground_img, background_map, extent,
-                                                  title=f"Near field image for {station_name}",
-                                                  subtitle=f"SB {subband} ({freq / 1e6:.1f} MHz), {str(obstime)[:16]}",
-                                                  opacity=opacity, vmin=ground_vmin, vmax=ground_vmax)
-
-    ground_fig.savefig(os.path.join(outputpath, f"{fname}_nearfield_calibrated.png"), bbox_inches='tight', dpi=200)
-    plt.close(ground_fig)
-
+    # Find maximum power and its location
+    maxpower = np.max(ground_img)
+    maxpower_dB = 10 * np.log10(maxpower)
     maxpixel_ypix, maxpixel_xpix = np.unravel_index(np.argmax(ground_img), ground_img.shape)
     maxpixel_x = np.interp(maxpixel_xpix, [0, npix_x], [extent[0], extent[1]])
     maxpixel_y = np.interp(maxpixel_ypix, [0, npix_y], [extent[2], extent[3]])
@@ -796,8 +810,21 @@ def make_xst_plots(xst_data: np.ndarray,
     maxpixel_lon, maxpixel_lat, _ = lofargeotiff.pqr_to_longlatheight([maxpixel_p, maxpixel_q], station_name)
 
     # Show location of maximum
-    print(f"Maximum at {maxpixel_x:.0f}m east, {maxpixel_y:.0f}m north of station center " +
+    print(f"Maximum of {maxpower_dB:.2f} dB at {maxpixel_x:.0f}m east, {maxpixel_y:.0f}m north of station center " +
           f"(lat/long {maxpixel_lat:.5f}, {maxpixel_lon:.5f})")
+
+    # Mark ground_img maximum with a red circle around it
+
+
+    ground_fig, folium_overlay = make_ground_plot(ground_img, background_map, extent,
+                                                  title=f"Near field image for {station_name}",
+                                                  subtitle=f"SB {subband} ({freq / 1e6:.1f} MHz), {str(obstime)[:16]}",
+                                                  opacity=opacity, vmin=ground_vmin, vmax=ground_vmax,
+                                                  mark_max_power=mark_max_power)
+
+    ground_fig.savefig(os.path.join(outputpath, f"{fname}_nearfield_calibrated.png"), bbox_inches='tight', dpi=200)
+    plt.close(ground_fig)
+
 
     tags = {"generated_with": f"lofarimaging v{__version__}",
             "subband": subband,

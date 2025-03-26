@@ -75,7 +75,7 @@ def ground_imager(visibilities, freq, npix_p, npix_q, dims, station_pqr, height=
     img = np.zeros([npix_q, npix_p], dtype=np.complex128)
 
     for q_ix, q in enumerate(np.linspace(dims[2], dims[3], npix_q)):
-        for p_ix, p in enumerate(np.linspace(dims[0], dims[1], npix_p)):
+        for p_ix, p in enumerate(np.linspace(dims[0], dims[1], npix_npixp)):
             r = height
             pqr = np.array([p, q, r], dtype=np.float32)
             antdist = np.linalg.norm(station_pqr - pqr[np.newaxis, :], axis=1)
@@ -125,13 +125,15 @@ def nearfield_imager(visibilities, baseline_indices, freqs, npix_p, npix_q, exte
         np.add(distances[baseline_indices[vis_chunkstart:vis_chunkend, 0]],
                -distances[baseline_indices[vis_chunkstart:vis_chunkend, 1]], out=bl_diff_chunk)
 
-        # j2pi = 1j * 2 * np.pi
+        j2pi = 1j * 2 * np.pi
+        c = SPEED_OF_LIGHT
         for ifreq, freq in enumerate(freqs):
-            # v = visibilities[vis_chunkstart:vis_chunkend, ifreq][:, None, None]
-            # lamb = SPEED_OF_LIGHT / freq
+            v = visibilities[vis_chunkstart:vis_chunkend, ifreq][:, None, None]
+            lamb = SPEED_OF_LIGHT / freq
 
-            # v[:,np.newaxis,np.newaxis]*np.exp(-2j*np.pi*freq/c*groundbase_pixels[:,:,:]/c)
-            # groundbase_pixels=nvis x npix x npix
+            #groundbase_pixels=nvis * npix_p * npix_q
+            #v[:,np.newaxis,np.newaxis]*np.exp(-2j*np.pi*freq/c*groundbase_pixels[:,:,:]/c)
+
             np.add(img, np.sum(ne.evaluate("v * exp(j2pi * bl_diff_chunk / lamb)"), axis=0), out=img)
     img /= len(freqs) * len(baseline_indices)
 
