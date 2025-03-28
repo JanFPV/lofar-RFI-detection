@@ -1,3 +1,4 @@
+ipykernel
 numpy
 numexpr
 numba
@@ -13,3 +14,5 @@ Pillow
 opcua
 h5py
 tqdm
+pandas
+opencv-python

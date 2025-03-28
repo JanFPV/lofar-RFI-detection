@@ -483,7 +483,7 @@ def make_ground_plot(image: np.ndarray, background_map: np.ndarray, extent: List
         ax.add_patch(Circle((maxpixel_x, maxpixel_y), radius=8, color='red', fill=False, linewidth=2))
         #ax.add_patch(Circle((maxpixel_x, maxpixel_y), radius=8, color='black', fill=False, linewidth=2))
         #ax.text(maxpixel_x, maxpixel_y, 'Max', color='red', fontsize=12, ha='center', va='center')
-        print("DEBUG: Added marker at", maxpixel_x, maxpixel_y)
+        #print("DEBUG: Added marker at", maxpixel_x, maxpixel_y)
 
     vmin, vmax = cimg.get_clim()
     raw_plotdata = cmap_with_alpha(Normalize(vmin=vmin, vmax=vmax)(image))[::-1, :]
@@ -627,7 +627,7 @@ def make_xst_plots(xst_data: np.ndarray,
                    obstime: datetime.datetime,
                    subband: int,
                    rcu_mode: int,
-                   caltable_dir: str = "../image_data/CalTables/",
+                   caltable_dir: str = "CalTables/",
                    extent: List[float] = None,
                    pixels_per_metre: float = 0.5,
                    sky_vmin: float = None,
@@ -641,7 +641,8 @@ def make_xst_plots(xst_data: np.ndarray,
                    hdf5_filename: str = None,
                    outputpath: str = "results",
                    subtract: List[str] = None,
-                   mark_max_power: bool = False):
+                   mark_max_power: bool = False,
+                   return_only_paths: bool = False):
     """
     Create sky and ground plots for an XST file
 
@@ -661,6 +662,7 @@ def make_xst_plots(xst_data: np.ndarray,
         hdf5_filename: Filename where hdf5 results can be written. Defaults to outputpath + '/results.h5'
         outputpath: Directory where results can be saved. Defaults to 'results'
         subtract: List of sources to subtract. Defaults to None
+        return_only_paths: Return only the paths instead of images. Defaults to False
 
 
     Returns:
@@ -771,7 +773,8 @@ def make_xst_plots(xst_data: np.ndarray,
                   subtitle=f"SB {subband} ({freq / 1e6:.1f} MHz), {str(obstime)[:16]}", fig=sky_fig,
                   vmin=sky_vmin, vmax=sky_vmax)
 
-    sky_fig.savefig(os.path.join(outputpath, f'{fname}_sky_calibrated.png'), bbox_inches='tight', dpi=200)
+    sky_image_path = os.path.join(outputpath, f"sky_{fname}_calibrated.png")
+    sky_fig.savefig(sky_image_path, bbox_inches='tight', dpi=200)
     plt.close(sky_fig)
 
     if sky_only:
@@ -822,7 +825,8 @@ def make_xst_plots(xst_data: np.ndarray,
                                                   opacity=opacity, vmin=ground_vmin, vmax=ground_vmax,
                                                   mark_max_power=mark_max_power)
 
-    ground_fig.savefig(os.path.join(outputpath, f"{fname}_nearfield_calibrated.png"), bbox_inches='tight', dpi=200)
+    nf_image_path = os.path.join(outputpath, f"nearfield_{fname}_calibrated.png")
+    ground_fig.savefig(nf_image_path, bbox_inches='tight', dpi=200)
     plt.close(ground_fig)
 
 
@@ -835,15 +839,17 @@ def make_xst_plots(xst_data: np.ndarray,
             "pixels_per_metre": pixels_per_metre}
     tags.update(calibration_info)
     lon_min, lon_max, lat_min, lat_max = extent_lonlat
-    lofargeotiff.write_geotiff(ground_img[::-1,:], os.path.join(outputpath, f"{fname}_nearfield_calibrated.tiff"),
-                               (lon_min, lat_max), (lon_max, lat_min), as_pqr=False,
-                               stationname=station_name, obsdate=obstime, tags=tags)
+    #lofargeotiff.write_geotiff(ground_img[::-1,:], os.path.join(outputpath, f"{fname}_nearfield_calibrated.tiff"),
+    #                           (lon_min, lat_max), (lon_max, lat_min), as_pqr=False,
+    #                           stationname=station_name, obsdate=obstime, tags=tags)
 
     leaflet_map = make_leaflet_map(folium_overlay, lon_center, lat_center, lon_min, lat_min, lon_max, lat_max)
 
     write_hdf5(hdf5_filename, xst_data, visibilities, sky_img, ground_img, station_name, subband, rcu_mode,
                freq, obstime, extent, extent_lonlat, height, marked_bodies_lmn, calibration_info, subtract)
 
+    if return_only_paths:
+        return sky_image_path, nf_image_path, leaflet_map
     return sky_fig, ground_fig, leaflet_map
 
 
