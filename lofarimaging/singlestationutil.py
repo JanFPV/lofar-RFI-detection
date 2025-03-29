@@ -702,7 +702,7 @@ def make_xst_plots(xst_data: np.ndarray,
 
     os.makedirs(outputpath, exist_ok=True)
 
-    fname = f"{obstime:%Y%m%d}_{obstime:%H%M%S}_{station_name}_SB{subband}"
+    fname = f"{obstime:%Y%m%d}_{obstime:%H%M%S}_{station_name}_SB{subband}_{height:.1f}m"
 
     npix_l, npix_m = 131, 131
     freq = freq_from_sb(subband, rcu_mode=rcu_mode)
@@ -813,15 +813,15 @@ def make_xst_plots(xst_data: np.ndarray,
     maxpixel_lon, maxpixel_lat, _ = lofargeotiff.pqr_to_longlatheight([maxpixel_p, maxpixel_q], station_name)
 
     # Show location of maximum
-    print(f"Maximum of {maxpower_dB:.2f} dB at {maxpixel_x:.0f}m east, {maxpixel_y:.0f}m north of station center " +
-          f"(lat/long {maxpixel_lat:.5f}, {maxpixel_lon:.5f})")
+    #print(f"Maximum of {maxpower_dB:.2f} dB at {maxpixel_x:.0f}m east, {maxpixel_y:.0f}m north of station center " +
+    #      f"(lat/long {maxpixel_lat:.5f}, {maxpixel_lon:.5f})")
 
     # Mark ground_img maximum with a red circle around it
 
 
     ground_fig, folium_overlay = make_ground_plot(ground_img, background_map, extent,
                                                   title=f"Near field image for {station_name}",
-                                                  subtitle=f"SB {subband} ({freq / 1e6:.1f} MHz), {str(obstime)[:16]}",
+                                                  subtitle=f"SB {subband} ({freq / 1e6:.1f} MHz), {str(obstime)[:16]}, {height:.1f} m",
                                                   opacity=opacity, vmin=ground_vmin, vmax=ground_vmax,
                                                   mark_max_power=mark_max_power)
 
