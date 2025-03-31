@@ -1,14 +1,17 @@
 import os
+import time
 import glob
 import datetime
 import re
 import pandas as pd
+from lofarimaging import read_acm_cube, make_xst_plots
 
 __all__ = [
     "get_subbands",
     "get_obstime",
     "analyze_files",
     "print_summary",
+    "measure_processing_duration",
 ]
 
 
@@ -77,3 +80,35 @@ def print_summary(summary):
     print(f"End time: {summary['end_time']}")
     print(f"Average measurements per subband: {summary['average_measures_per_subband']}")
     print(f"Average measurement duration: {summary['measurement_duration']} seconds")
+
+
+def measure_processing_duration(df, station_name, station_type, rcu_mode, temp_dir):
+    """
+    Measure the duration of processing a specific subband and return the duration.
+    Args:
+        df (pd.DataFrame): DataFrame containing the data files and their metadata.
+        station_name (str): Name of the station.
+        station_type (str): Type of the station.
+        rcu_mode (str): RCU mode.
+    Returns:
+        float: Duration of the processing in seconds.
+    """
+    start_time = time.time()
+
+    height = 1.5
+    subband_data = df[df['subband'] == 255]
+    row = subband_data.iloc[0]
+    xst_filename = row['dat_file']
+    obstime = row['timestamp']
+    subband = row['subband']
+
+    try:
+        print(f"Generating image for subband {subband} at time {obstime} and height {height} m.")
+        visibilities = read_acm_cube(xst_filename, station_type)[0]
+        _, _, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
+    except Exception as e:
+        print(f"Error generating image for {xst_filename}: {e}")
+
+    end_time = time.time()
+    duration = end_time - start_time
+    return duration
