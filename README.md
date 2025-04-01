@@ -1,54 +1,42 @@
-# LOFAR single station imaging
-This repository contains code for imaging LOFAR data with direct Fourier transforms. This is a straightforward way to image single station data, or data from a limited number of baselines. Both sky images and near-field (ground) images are supported.
+# LOFAR Single Station Imaging for RFI Detection
 
-For imaging larger LOFAR data sets (in Measurement Sets), see the LOFAR imaging cookbook.
+This repository is part of my Bachelor's thesis project at VUAS, which aims to use LOFAR in standalone mode to detect and measure radio frequency interference (RFI) at the LOFAR station in Irbene.
 
-Much of the code in this repository was originally written by Vanessa Moss (https://github.com/cosmicpudding), based on a LOFAR imaging tutorial by Michiel Brentjens (https://github.com/brentjens).
+## Installation
+To install and set up the environment, follow these steps:
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lofar-astron/lofarimaging/master?filepath=lofarimaging.ipynb)
+```sh
+# Clone the repository
+git clone https://github.com/JanFPV/lofar-RFI-detection.git
+cd lofar-RFI-detection
 
-### Installation
-This repository can be cloned and installed by running pip,
-```
->>> python3 -m pip install git+https://github.com/lofar-astron/lofarimaging.git
-```
-Or for development, you can clone this repository and install it manually.
+# Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows, use 'venv\Scripts\activate'
 
-```
->>> git clone git@github.com:lofar-astron/lofarimaging.git
->>> cd lofarimaging
->>> python3 -m pip install -e .
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-If you want to use calibration tables, download them from ASTRON, e.g. through
+## Calibration Tables
+This repository includes calibration tables specifically for the Irbene LOFAR station, so no additional downloads are required.
+
+## Running the Notebook
+Open the notebook in a Jupyter Notebook, JupyterLab, or VS Code instance:
+
+```sh
+jupyter notebook
+```
+
+In VS Code, open the notebook file and ensure the Python extension is installed to run the cells interactively.
+
+To run all cells in the notebook:
 
 ```
->>> svn co https://svn.astron.nl/Station/trunk/CalTables
+Kernel > Restart & Run All
 ```
 
-### To start the notebook
-Open the notebook in a Jupyter notebook (or Jupyterlab) instance. You can start such an instance with 
-`>> jupyter notebook`
+---
 
-### To run the entire notebook
-`Kernel > Restart & Run All`
+This project extends LOFAR single-station imaging capabilities to enable standalone RFI detection and analysis, focusing on data collected at the Irbene LOFAR station.
 
-### Notes
-This code ships with an example XST-dataset (`20170720_095816_mode_3_xst_sb297.dat`), obtained using station DE603LBA, specifically collecting data in subband 297 (58 MHz). It should run on any other XST-dataset, provided the station name is changed accordingly. By default, the code visualises timestep #0 of the 30 timesteps of integration, but this can also be modified to any other time slice.
-
-### Release: Version 1.5
-
- * Overlay the ground plot on a satellite image (both in a static PNG and as a Leaflet overlay in the notebook)
- * Annotate CygA, CasA and Sun on the sky plot
- * Support HBA imaging using one tile per element
- * Use station rotations from lofarantpos
- * Rotate the antennas, not the image
- * Show longitude and latitute of maximum pixel
- * Speed up the code somewhat by using numba and numexpr
- * Move some code from the notebook to a python file
-
-### Release: Version 1.4
-Update to automatically parse some information from data file names, based on the wrapper script written by Mattia Mancini for recording station data (e.g. https://svn.astron.nl/viewvc/LOFAR/trunk/LCU/StationTest/rspctlprobe.py). Some formatting removed for compatibility with different operating systems. To obtain the LOFAR antenna database needed for antenna positions, please install: `pip install lofarantpos`.
-
-### Release: Version 1.3
-Notebook has been updated to include station calibration for LBA (HBA to come later). This requires the "caltables" folder to be in the same directory as the notebook, but that can be changed as long as the location is changed also in the function. The calibration tables themselves are not included in this repository due to their size, but you can access them [here](http://astron.nl/~moss/caltables.zip) (~65 MB download): , or download them from their [repository](https://svn.astron.nl/Station/trunk/CalTables).
