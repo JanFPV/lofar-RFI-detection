@@ -8,7 +8,7 @@ if len(sys.argv) != 2:
     print("Usage: python realtime_movie_generation.py <input_path>")
     sys.exit(1)
 input_path = sys.argv[1]
-output_path = input_path + "/movie/"
+output_path = input_path + "/RFI-realtime-observation/"
 caltable_dir = "CalTables/"
 temp_dir = output_path + "temp"
 fps = 10

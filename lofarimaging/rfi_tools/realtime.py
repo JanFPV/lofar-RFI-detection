@@ -148,7 +148,7 @@ def get_subbands(input_path):
     if obs_files:
         obs_file = os.path.join(input_path, obs_files[0])  # Use the first matching file
     else:
-        raise FileNotFoundError("No observation file (.h, .log, .sh) found in the input path.")
+        raise FileNotFoundError("No observation file (.h, .sh) found in the input path.")
 
     obs_data = obs_parser(obs_file)
 
