@@ -144,7 +144,7 @@ def obs_parser(obs_file):
 def get_subbands(input_path):
     # Find the observation file in the input path
     time.sleep(0.5)
-    obs_files = [f for f in os.listdir(input_path) if f.endswith(('.h', '.log', '.sh'))]
+    obs_files = [f for f in os.listdir(input_path) if f.endswith(('.h', '.sh'))]
     if obs_files:
         obs_file = os.path.join(input_path, obs_files[0])  # Use the first matching file
     else:
