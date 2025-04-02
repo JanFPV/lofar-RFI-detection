@@ -154,7 +154,7 @@ def get_subbands(input_path):
 
     if 'subbands' in obs_data:
         # Convert subbands string to a list of integers
-        subbands = list(map(int, obs_data['subbands'].split(',')))
+        subbands = list(map(int, obs_data['subbands'].split(':')))
         min_subband = min(subbands)
         max_subband = max(subbands)
         print(f"Min subband: {min_subband}, Max subband: {max_subband}")
