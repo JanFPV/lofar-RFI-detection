@@ -1,6 +1,8 @@
-from lofarimaging.rfi_tools import read_acm_real_time#, generate_movie_from_list
-import sys
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from lofarimaging.rfi_tools import read_acm_real_time, generate_movie_from_list
 
 
 # Configuration
@@ -33,6 +35,6 @@ if os.path.exists(sky_image_list_path) or os.path.exists(nf_image_list_path):
 if not skip_processing:
     read_acm_real_time(input_path, output_path, caltable_dir, temp_dir, sleep_interval, station_name, integration_time_s, rcu_mode, height)
 
-#generate_movie_from_list(f"{temp_dir}/sky_image_list_realtime.txt", f"{output_path}/sky_movie_realtime.mp4", fps=fps)
-#generate_movie_from_list(f"{temp_dir}/nf_image_list_realtime.txt", f"{output_path}/nf_movie_realtime.mp4", fps=fps)
+generate_movie_from_list(f"{temp_dir}/sky_image_list_realtime.txt", f"{output_path}/sky_movie_realtime.mp4", fps=fps)
+generate_movie_from_list(f"{temp_dir}/nf_image_list_realtime.txt", f"{output_path}/nf_movie_realtime.mp4", fps=fps)
 print("Movie generation complete.")
