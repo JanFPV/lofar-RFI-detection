@@ -6,6 +6,7 @@ results_auto/*
 results/*
 CalTables/*
 tilecache/*
+notebooks/tilecache/*
 .idea
 *.zip
 data/*

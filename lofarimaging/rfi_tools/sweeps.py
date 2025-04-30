@@ -10,7 +10,7 @@ __all__ = [
     "get_number_of_measurements_height_sweep",
 ]
 
-def generate_time_sweep(df, subbands, height, station_name, station_type, rcu_mode, temp_dir, output_dir, fps=10, short_sweep=False):
+def generate_time_sweep(df, subbands, height, station_name, station_type, rcu_mode, temp_dir, output_dir, caltable_dir: str = "../CalTables/", fps=10, short_sweep=False):
     """
     Generate a time sweep movie from the given DataFrame and parameters.
     Args:
@@ -49,7 +49,7 @@ def generate_time_sweep(df, subbands, height, station_name, station_type, rcu_mo
             try:
                 print(f"Generating image for subband {subband} at time {obstime} and height {height} m.")
                 visibilities = read_acm_cube(xst_filename, station_type)[0]
-                sky_image_path, nf_image_path, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
+                sky_image_path, nf_image_path, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, caltable_dir=caltable_dir, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
                 sky_movie.append(sky_image_path)
                 nf_movie.append(nf_image_path)
             except Exception as e:
@@ -69,7 +69,7 @@ def generate_time_sweep(df, subbands, height, station_name, station_type, rcu_mo
     return
 
 
-def generate_subband_sweep(df, times, subbands, height, station_name, station_type, rcu_mode, temp_dir, output_dir, fps=10, short_sweep=False):
+def generate_subband_sweep(df, times, subbands, height, station_name, station_type, rcu_mode, temp_dir, output_dir, caltable_dir: str = "../CalTables/", fps=10, short_sweep=False):
     '''
     Generate a subband sweep movie from the given DataFrame and parameters.
     Args:
@@ -114,7 +114,7 @@ def generate_subband_sweep(df, times, subbands, height, station_name, station_ty
             try:
                 print(f"Generating image for subband {subband} at time {obstime} and height {height} m.")
                 visibilities = read_acm_cube(xst_filename, station_type)[0]
-                sky_image_path, nf_image_path, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
+                sky_image_path, nf_image_path, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, caltable_dir=caltable_dir, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
                 sky_movie.append(sky_image_path)
                 nf_movie.append(nf_image_path)
             except Exception as e:
@@ -134,7 +134,7 @@ def generate_subband_sweep(df, times, subbands, height, station_name, station_ty
     return
 
 
-def generate_height_sweep(df, times, subbands, heights, station_name, station_type, rcu_mode, temp_dir, output_dir, fps=10, short_sweep=False):
+def generate_height_sweep(df, times, subbands, heights, station_name, station_type, rcu_mode, temp_dir, output_dir, caltable_dir: str = "../CalTables/", fps=10, short_sweep=False):
     '''
     Generate a height sweep movie from the given DataFrame and parameters.
     Args:
@@ -181,7 +181,7 @@ def generate_height_sweep(df, times, subbands, heights, station_name, station_ty
                 try:
                     print(f"Generating image for subband {subband} at time {obstime} and height {height} m.")
                     visibilities = read_acm_cube(xst_filename, station_type)[0]
-                    sky_image_path, nf_image_path, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
+                    sky_image_path, nf_image_path, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, caltable_dir=caltable_dir, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
                     sky_movie.append(sky_image_path)
                     nf_movie.append(nf_image_path)
                 except Exception as e:

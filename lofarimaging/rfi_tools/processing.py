@@ -82,7 +82,7 @@ def print_summary(summary):
     print(f"Average measurement duration: {summary['measurement_duration']} seconds")
 
 
-def measure_processing_duration(df, station_name, station_type, rcu_mode, temp_dir):
+def measure_processing_duration(df, station_name, station_type, rcu_mode, temp_dir, caltable_dir: str = "../CalTables/"):
     """
     Measure the duration of processing a specific subband and return the duration.
     Args:
@@ -105,7 +105,7 @@ def measure_processing_duration(df, station_name, station_type, rcu_mode, temp_d
     try:
         print(f"Generating image for subband {subband} at time {obstime} and height {height} m.")
         visibilities = read_acm_cube(xst_filename, station_type)[0]
-        _, _, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
+        _, _, _ = make_xst_plots(visibilities, station_name, obstime, subband, rcu_mode, caltable_dir=caltable_dir, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
     except Exception as e:
         print(f"Error generating image for {xst_filename}: {e}")
 
