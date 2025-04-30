@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  lofar:
+    image: ghcr.io/JanFPV/lofar-RFI-detection:latest
+    volumes:
+      - /mnt/LOFAR0/wait:/data    # Incoming data directory
+    command: /data                  # Argument to the script
