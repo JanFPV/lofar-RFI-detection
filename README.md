@@ -11,15 +11,21 @@ git clone https://github.com/JanFPV/lofar-RFI-detection.git
 cd lofar-RFI-detection
 
 # Create and activate a virtual environment
-python -m venv venv
+python3.13 -m venv venv
 source venv/bin/activate  # On Windows, use 'venv\Scripts\activate'
 
 # Install dependencies
-pip install -r requirements.txt
+pip3.13 install -r requirements.txt
 ```
 
 ## Calibration Tables
 This repository includes calibration tables specifically for the Irbene LOFAR station, so no additional downloads are required.
+
+## Running Real Time observation
+To run a real observation, clone the repository and create an environment, then, start an observation and give the path as an argument to the following script:
+```sh
+python3.13 scripts/realtime_movie_generation.py path-to-dat-file
+```
 
 ## Running the Notebook
 Open the notebook in a Jupyter Notebook, JupyterLab, or VS Code instance:
@@ -27,6 +33,11 @@ Open the notebook in a Jupyter Notebook, JupyterLab, or VS Code instance:
 ```sh
 jupyter notebook
 ```
+or
+```sh
+code .
+```
+
 
 In VS Code, open the notebook file and ensure the Python extension is installed to run the cells interactively.
 
