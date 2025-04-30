@@ -3,6 +3,8 @@ import pandas as pd
 import time
 import os
 import datetime
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from lofarimaging import get_station_type, rcus_in_station, make_xst_plots
 
 __all__ = [
@@ -41,6 +43,10 @@ def read_acm_real_time(input_path, output_path, caltable_dir, temp_dir, sleep_in
     os.makedirs(temp_dir, exist_ok=True)
     sky_movie = []
     nf_movie = []
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    nf_img_display = None  # Esto se usará para actualizar la imagen
+
 
     with open(filename, "rb") as f:
         while True:
@@ -99,6 +105,43 @@ def read_acm_real_time(input_path, output_path, caltable_dir, temp_dir, sleep_in
 
                 # Remove processed data
                 buffer = buffer[block_size:]
+
+                # Show or update the image
+                try:
+                    print(temp_dir)
+                    print(f"Generating image for subband {current_subband} at time {obstime} and height {height} m.")
+                    sky_image_path, nf_image_path, _ = make_xst_plots(
+                        block, station_name, obstime, current_subband, rcu_mode,
+                        map_zoom=18, outputpath=temp_dir, mark_max_power=True,
+                        height=height, return_only_paths=True
+                    )
+                    print(f"Image generated: {sky_image_path}, {nf_image_path}")
+
+                    if sky_image_path is not None and nf_image_path is not None:
+                        sky_movie.append(sky_image_path)
+                        nf_movie.append(nf_image_path)
+
+                        # Read image
+                        img = mpimg.imread(nf_image_path)
+
+                        # Show image
+                        if nf_img_display is None:
+                            nf_img_display = ax.imshow(img)
+                            ax.set_title(f"Near-field Image - Subband {current_subband}")
+                            ax.axis('off')
+                            plt.ion()  # Interactive mode on
+                            plt.show()
+                        else:
+                            nf_img_display.set_data(img)
+                            ax.set_title(f"Near-field Image - Subband {current_subband}")
+                            fig.canvas.draw()
+                            fig.canvas.flush_events()
+                    else:
+                        print("One or both image paths are None; skipping append and display.")
+
+                except Exception as e:
+                    print(f"Error generating image: {e}")
+
 
             # If no new data, wait and retry
             if new_data.size == 0:
