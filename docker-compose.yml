@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   lofar:
     image: ghcr.io/janfpv/lofar-rfi-detection:latest

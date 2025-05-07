@@ -52,14 +52,16 @@ Kernel > Restart & Run All
 
 You can run the project in a self-contained Docker environment instead of installing Python and dependencies manually.
 
-### 1. Install docker and compose
+### 1. Build the Docker image (optional)
 
-- Docker: https://docs.docker.com/get-docker/
-- Docker Compose: https://docs.docker.com/compose/
+```sh
+docker build -t lofar-rfi .
+```
+
 
 ### 2. Run the script using Docker Compose
 
-If you have a directory (e.g., `/home/user/Desktop/test`) containing the real-time observation file, you can mount it into the container and pass it as an argument:
+If you have a directory (e.g., `/home/user/Desktop/test/`) containing the real-time observation file, you can mount it into the container and pass it as an argument:
 
 ```sh
 docker-compose run --rm \
@@ -73,11 +75,14 @@ This will run the script as:
 python scripts/realtime_movie_generation.py /data
 ```
 
-Inside the container, `/data` points to your local `/data/de/prueba`.
+Inside the container, `/data` points to your local `/home/user/Desktop/test`.
 
 > Note: This assumes your script reads a file from the directory and writes results back into the same path.
 
-### 3. Notes
+### 3. Requirements
+
+- Docker installed: https://docs.docker.com/get-docker/
+- Docker Compose: https://docs.docker.com/compose/
 
 Docker support is optional and does not replace the ability to run the project via virtual environments or notebooks.
 
