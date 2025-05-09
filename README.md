@@ -12,13 +12,23 @@ To install and set up the environment, follow these steps:
 git clone https://github.com/JanFPV/lofar-RFI-detection.git
 cd lofar-RFI-detection
 
-# Create and activate a virtual environment
+# Create a virtual environment
 python3.12 -m venv venv
+
+# Activate the virtual environment
 source venv/bin/activate  # On Windows, use 'venv\Scripts\activate'
 
 # Install dependencies
 pip3.12 install -r requirements.txt
 ```
+
+Alternatively, you can run the included setup script to perform all steps above automatically:
+
+```sh
+./setup.sh
+```
+
+> Note: The script assumes you have Python 3.12 installed and are already inside the `lofar-RFI-detection` directory.
 
 ## Calibration Tables
 This repository includes calibration tables specifically for the Irbene LOFAR station, so no additional downloads are required.
