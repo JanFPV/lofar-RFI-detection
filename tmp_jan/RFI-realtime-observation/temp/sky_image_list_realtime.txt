@@ -1,0 +1,17 @@
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_104720_LV614_SB51_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_104720_LV614_SB52_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_104936_LV614_SB52_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_104936_LV614_SB53_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105117_LV614_SB53_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105117_LV614_SB54_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105300_LV614_SB54_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105300_LV614_SB55_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105440_LV614_SB55_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105440_LV614_SB56_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105626_LV614_SB56_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105626_LV614_SB57_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105806_LV614_SB57_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105806_LV614_SB58_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105945_LV614_SB58_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_105945_LV614_SB59_1.5m_calibrated.png
+/mnt/LOFAR0/xst/tmp_jan/RFI-realtime-observation/temp/sky_20250509_110117_LV614_SB59_1.5m_calibrated.png
