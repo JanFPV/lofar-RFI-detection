@@ -2,11 +2,11 @@ version: "3.8"
 
 services:
   web:
-    image: ghcr.io/tu_usuario/lofar-rfi-detection:latest  # o tu etiqueta
+    build: .
     ports:
       - "5000:5000"
     volumes:
       - ./webapp/static/images:/app/webapp/static/images
-      - /mnt/LOFAR0/wait:/data
+      # - /mnt/LOFAR0/wait:/data
     environment:
-      - FLASK_ENV=production
+      - FLASK_ENV=development

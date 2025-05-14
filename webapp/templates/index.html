@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LOFAR RFI Control Panel</title>
+</head>
+<body>
+  <h1>LOFAR RFI Observation Panel</h1>
+
+  <h2>Configuration</h2>
+  <!-- Observation setup form -->
+  <form action="/start" method="post">
+    Data folder: <input type="text" name="folder" value="{{ config.folder }}"><br>
+    Max threads: <input type="number" name="threads" value="{{ config.threads }}"><br>
+    Step (1 out of N images): <input type="number" name="step" value="{{ config.step }}"><br>
+    <button type="submit">Start observation</button>
+  </form>
+
+  <!-- Stop button -->
+  <form action="/stop" method="post" style="margin-top: 10px;">
+    <button type="submit">Stop observation</button>
+  </form>
+
+  <h2>Last processed images</h2>
+  <!-- Display the 5 latest images with metadata -->
+  {% for img in images %}
+    <div style="margin:10px 0;">
+      <strong>{{ img.filename }}</strong><br>
+      Subband: {{ img.subband }} - Status: {{ img.status }}<br>
+      <img src="{{ url_for('static', filename='images/' + img.filename) }}" width="400"><br>
+    </div>
+  {% endfor %}
+</body>
+</html>
