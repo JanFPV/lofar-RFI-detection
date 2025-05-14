@@ -4,6 +4,7 @@ results_auto/*
 
 # LOFAR
 results/*
+results_auto/*
 CalTables/*
 tilecache/*
 notebooks/tilecache/*
