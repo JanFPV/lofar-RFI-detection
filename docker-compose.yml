@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   web:
-    image: ghcr.io/tu_usuario/lofar-rfi-detection:latest  # o tu etiqueta
+    image: ghcr.io/janfpv/lofar-rfi-detection:latest
     ports:
       - "5000:5000"
     volumes:
