@@ -13,7 +13,7 @@ This document describes two modes for running the Flask-based LOFAR RFI detectio
 Make sure you have:
 
 - Docker installed and running
-- Docker Compose installed (v2 recommended)
+- Docker Compose installed (v2 required)
 - Internet access (for pulling images in remote mode)
 
 ---
@@ -27,7 +27,7 @@ This mode uses a prebuilt image from your GitHub repository or Docker Hub. It's 
 
 ### **Command**
 ```bash
-docker-compose up
+docker compose up
 ```
 
 ### **Expected behavior**
@@ -47,7 +47,7 @@ This mode is used for active development and debugging. It builds the image from
 
 ### **Command**
 ```bash
-docker-compose -f docker-compose.local.yml up --build
+docker compose -f docker-compose.local.yml up --build
 ```
 
 ### **Expected behavior**
@@ -82,7 +82,7 @@ lofar-RFI-detection/
 To stop the server:
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 To remove old or dangling images (optional):
