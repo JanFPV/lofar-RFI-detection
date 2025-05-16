@@ -1,3 +1,8 @@
+# lofarimaging/rfi_tools/realtime.py
+
+import threading
+import queue
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
 import time
@@ -5,11 +10,16 @@ import os
 import datetime
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from lofarimaging import get_station_type, rcus_in_station, make_xst_plots
+from webapp import state
+
 
 __all__ = [
     "wait_for_dat_file",
-    "read_acm_real_time",
+    "read_blocks",
     "obs_parser",
     "get_subbands",
 ]
@@ -23,130 +33,77 @@ def wait_for_dat_file(input_path, sleep_interval=0.2):
             return os.path.join(input_path, files[0])  # Return first .dat file found
         time.sleep(sleep_interval)
 
-
-def read_acm_real_time(input_path, output_path, caltable_dir, temp_dir, sleep_interval, station_name, integration_time_s, rcu_mode, height):
+def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval, station_name, integration_time_s, rcu_mode, height, step=1, max_threads=4):
+    # Get station type and number of RCU channels based on name
     station_type = get_station_type(station_name)
     num_rcu = rcus_in_station(station_type)
     block_size = num_rcu * num_rcu
 
+    # Wait until a .dat file appears in the input path
     filename = wait_for_dat_file(input_path)
-    print(f"File {filename} detected. Starting real-time reading...")
-    buffer = np.array([], dtype=np.complex128)  # Buffer to accumulate incomplete data
+    print(f"📡 File {filename} detected. Starting real-time block reader...")
 
-    # Get min and max subbands
+    # Buffer to accumulate streamed data
+    buffer = np.array([], dtype=np.complex128)
+
+    block_counter = 0      # Counts total blocks seen
+    subband_counter = 0    # Tracks current subband for image labeling
+
+    # Read min/max subbands from metadata file
     min_subband, max_subband = get_subbands(input_path)
-    current_subband = min_subband  # Start with the minimum subband
 
-    # Initialize an empty DataFrame
-    df = pd.DataFrame(columns=["timestamp", "subband", "dat_file", "h_file"])
+    # Queue to hold blocks to be processed by workers
+    block_queue = queue.Queue()
 
-    os.makedirs(temp_dir, exist_ok=True)
-    sky_movie = []
-    nf_movie = []
+    # Function executed by worker threads to generate images
+    def process_block(block, subband, timestamp):
+        try:
+            print(f"⚙️ Processing subband {subband} at {timestamp}")
+            sky_img, nf_img, _ = make_xst_plots(
+                block, station_name, timestamp, subband, rcu_mode,
+                map_zoom=18, outputpath=temp_dir, mark_max_power=True,
+                height=height, return_only_paths=True
+            )
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-    nf_img_display = None  # Esto se usará para actualizar la imagen
+            # Log the generated near-field image to the system state
+            if nf_img:
+                filename = os.path.basename(nf_img)
+                state.add_image_entry(filename, subband=subband)
+        except Exception as e:
+            print(f"❌ Error processing subband {subband}: {e}")
 
+    # Create a pool of worker threads
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        with open(filename, "rb") as f:
+            while True:
+                # Read new data from the .dat stream
+                new_data = np.fromfile(f, dtype=np.complex128)
+                buffer = np.concatenate((buffer, new_data))
 
-    with open(filename, "rb") as f:
-        while True:
-            # Read new available data
-            new_data = np.fromfile(f, dtype=np.complex128)
+                # If enough data is accumulated to form a block, process it
+                while buffer.size >= block_size:
+                    block = buffer[:block_size].reshape((num_rcu, num_rcu))
+                    buffer = buffer[block_size:]
 
-            # Accumulate data in the buffer
-            buffer = np.concatenate((buffer, new_data))
+                    block_counter += 1
 
-            # Process full blocks if possible
-            while buffer.size >= block_size:
-                block = buffer[:block_size].reshape((num_rcu, num_rcu))
+                    # Step filtering: only process 1 of every N blocks
+                    if block_counter % step != 0:
+                        continue  # Skip this block
 
-                # Save block to file
-                obstime = datetime.datetime.now()
-                timestamp = obstime.strftime('%Y%m%d_%H%M%S')  # Timestamp for filename
-                output_filename = f"{output_path}{timestamp}_xst.dat"
-                block.tofile(output_filename)  # Save block as .dat file
-                print(f"Block saved as {output_filename}")
+                    # Prepare metadata for this block
+                    obstime = datetime.datetime.now()
+                    subband = min_subband + (subband_counter % (max_subband - min_subband + 1))
+                    subband_counter += 1
 
-                # Block processing
-                try:
-                    print(temp_dir)
-                    print(f"Generating image for subband {current_subband} at time {obstime} and height {height} m.")
-                    sky_image_path, nf_image_path, _ = make_xst_plots(block, station_name, obstime, current_subband, rcu_mode, map_zoom=18, outputpath=temp_dir, mark_max_power=True, height=height, return_only_paths=True)
-                    print(f"Image generated: {sky_image_path}, {nf_image_path}")
-                    sky_movie.append(sky_image_path)
-                    nf_movie.append(nf_image_path)
-                except Exception as e:
-                    print(f"Error generating image: {e}")
+                    # Send block to be processed by an available thread
+                    executor.submit(process_block, block, subband, obstime)
 
-                # Export the image lists for movie generation
-                try:
-                    with open(f"{temp_dir}/sky_image_list_realtime.txt", "w") as sky_file:
-                        sky_file.write("\n".join(sky_movie))
-
-                    with open(f"{temp_dir}/nf_image_list_realtime.txt", "w") as nf_file:
-                        nf_file.write("\n".join(nf_movie))
-                except Exception as e:
-                    print(f"Error writing image list files: {e}")
-
-                h_file = None  # Placeholder for h_file
-
-                # Add entry to DataFrame
-                df = pd.concat([df, pd.DataFrame({
-                    "timestamp": [timestamp],
-                    "subband": [current_subband],
-                    "dat_file": [output_filename],
-                    "h_file": [h_file]
-                })], ignore_index=True)
-
-                # Update subband
-                current_subband += 1
-                if current_subband > max_subband:
-                    current_subband = min_subband  # Reset to minimum subband
-
-                # Remove processed data
-                buffer = buffer[block_size:]
-
-                # Show or update the image
-                try:
-                    print(temp_dir)
-                    print(f"Generating image for subband {current_subband} at time {obstime} and height {height} m.")
-                    sky_image_path, nf_image_path, _ = make_xst_plots(
-                        block, station_name, obstime, current_subband, rcu_mode,
-                        map_zoom=18, outputpath=temp_dir, mark_max_power=True,
-                        height=height, return_only_paths=True
-                    )
-                    print(f"Image generated: {sky_image_path}, {nf_image_path}")
-
-                    if sky_image_path is not None and nf_image_path is not None:
-                        sky_movie.append(sky_image_path)
-                        nf_movie.append(nf_image_path)
-
-                        # Read image
-                        img = mpimg.imread(nf_image_path)
-
-                        # Show image
-                        if nf_img_display is None:
-                            nf_img_display = ax.imshow(img)
-                            ax.set_title(f"Near-field Image - Subband {current_subband}")
-                            ax.axis('off')
-                            plt.ion()  # Interactive mode on
-                            plt.show()
-                        else:
-                            nf_img_display.set_data(img)
-                            ax.set_title(f"Near-field Image - Subband {current_subband}")
-                            fig.canvas.draw()
-                            fig.canvas.flush_events()
-                    else:
-                        print("One or both image paths are None; skipping append and display.")
-
-                except Exception as e:
-                    print(f"Error generating image: {e}")
+                # If no new data was read, wait before retrying
+                if new_data.size == 0:
+                    time.sleep(sleep_interval)
 
 
-            # If no new data, wait and retry
-            if new_data.size == 0:
-                time.sleep(sleep_interval)
-                continue
 
 
 def obs_parser(obs_file):
@@ -179,7 +136,7 @@ def obs_parser(obs_file):
             elif line.startswith("- beamctl "):
                 line = line.replace("- ", "")
                 beam_data = line.split()
-                source_name = get_source_name(beam_data[7].split("=")[1].replace('$', ''))
+                #source_name = get_source_name(beam_data[7].split("=")[1].replace('$', ''))
                 obs_data['beams'].append({'name': source_name, 'beamlets': beam_data[4].split("=")[1]})
     return obs_data
 
