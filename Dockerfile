@@ -11,12 +11,12 @@ ENV FLASK_RUN_PORT=5000
 WORKDIR /app
 
 # Instala dependencias del sistema
-#RUN apt-get update && apt-get install -y \
-#    libexpat1 \
-#    gdal-bin \
-#    libgdal-dev \
-#    libgl1 \
-#    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    libexpat1 \
+    gdal-bin \
+    libgdal-dev \
+    libgl1 \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # Copiar dependencias y código

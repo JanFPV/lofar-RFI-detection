@@ -1,3 +1,5 @@
+# webapp/state.py
+
 import os
 import pandas as pd
 
@@ -6,7 +8,7 @@ is_observing = False
 
 # Configuración activa
 config = {
-    "folder": "",
+    "folder": "/data",
     "threads": 4,
     "step": 1
 }
@@ -29,12 +31,18 @@ def add_image_entry(filename, subband, status="processed", duration=None, frame_
 
 def save_log(path="webapp/session_log.json"):
     image_log.to_json(path, orient="records", indent=2)
-
 def load_log(path="webapp/session_log.json"):
     global image_log
-    if os.path.exists(path):
-        image_log = pd.read_json(path)
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        try:
+            image_log = pd.read_json(path)
+        except ValueError:
+            print("⚠️ session_log.json is invalid or empty. Reinitializing log.")
+            image_log = pd.DataFrame(columns=[
+                "timestamp", "filename", "subband", "status", "duration", "frame_index"
+            ])
     else:
+        print("⚠️ session_log.json not found or empty. Initializing empty log.")
         image_log = pd.DataFrame(columns=[
             "timestamp", "filename", "subband", "status", "duration", "frame_index"
         ])

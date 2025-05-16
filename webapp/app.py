@@ -1,5 +1,12 @@
+# webapp/app.py
+
 from flask import Flask, render_template, request, redirect
-import state
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from webapp import state, processor
+
 
 app = Flask(__name__)
 
@@ -19,7 +26,11 @@ def start():
     state.config["threads"] = int(request.form["threads"])
     state.config["step"] = int(request.form["step"])
     state.is_observing = True
+
+    processor.start_observation()
+
     return redirect("/")
+
 
 @app.route("/stop", methods=["POST"])
 def stop():
