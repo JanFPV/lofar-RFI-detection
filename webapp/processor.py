@@ -1,3 +1,5 @@
+# webapp/processor.py
+
 import threading
 import os
 import sys
@@ -5,7 +7,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from lofarimaging.rfi_tools.realtime import read_blocks
-from webapp import state, config
+from webapp import state
+import config
 
 def start_observation():
     input_path = state.config["folder"]

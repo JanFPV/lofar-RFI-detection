@@ -2,16 +2,16 @@
 
 import os
 import pandas as pd
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import config as app_config
 
 # Estado de ejecución
 is_observing = False
 
 # Configuración activa
-config = {
-    "folder": "/data",
-    "threads": 4,
-    "step": 1
-}
+config = app_config.DEFAULT_OBSERVATION_CONFIG.copy()
 
 # Log de imágenes procesadas (aunque esté vacío al principio)
 image_log = pd.DataFrame(columns=[

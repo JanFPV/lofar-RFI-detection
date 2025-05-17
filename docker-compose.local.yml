@@ -7,6 +7,6 @@ services:
       - "5000:5000"
     volumes:
       - ./webapp/static/images:/app/webapp/static/images
-      - /home/jan/Desktop/test:/data
+      - ./tmp:/data
     environment:
       - FLASK_ENV=development
