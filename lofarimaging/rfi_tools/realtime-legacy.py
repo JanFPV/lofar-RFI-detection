@@ -1,3 +1,5 @@
+# lofarimaging/rfi_tools/realtime-legacy.py
+
 import numpy as np
 import pandas as pd
 import time
@@ -49,8 +51,7 @@ def read_acm_real_time(input_path, output_path, caltable_dir, temp_dir, sleep_in
     nf_movie = []
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    nf_img_display = None  # Esto se usará para actualizar la imagen
-
+    nf_img_display = None
 
     with open(filename, "rb") as f:
         while True:
@@ -190,7 +191,7 @@ def obs_parser(obs_file):
                 line = line.replace("- ", "")
                 beam_data = line.split()
                 #source_name = get_source_name(beam_data[7].split("=")[1].replace('$', ''))
-                obs_data['beams'].append({'name': source_name, 'beamlets': beam_data[4].split("=")[1]})
+                #obs_data['beams'].append({'name': source_name, 'beamlets': beam_data[4].split("=")[1]})
     return obs_data
 
 

@@ -10,7 +10,7 @@ FLASK_PORT = 5000
 FLASK_HOST = "0.0.0.0"
 
 # Paths
-IMAGES_FOLDER = "static/images/"
+IMAGES_FOLDER = "webapp/static/images/"
 LOG_PATH = "session_log.json"
 CALTABLE_DIR = "CalTables/"
 

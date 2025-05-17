@@ -37,12 +37,12 @@ def load_log(path="webapp/session_log.json"):
         try:
             image_log = pd.read_json(path)
         except ValueError:
-            print("⚠️ session_log.json is invalid or empty. Reinitializing log.")
+            print("session_log.json is invalid or empty. Reinitializing log.")
             image_log = pd.DataFrame(columns=[
                 "timestamp", "filename", "subband", "status", "duration", "frame_index"
             ])
     else:
-        print("⚠️ session_log.json not found or empty. Initializing empty log.")
+        print("session_log.json not found or empty. Initializing empty log.")
         image_log = pd.DataFrame(columns=[
             "timestamp", "filename", "subband", "status", "duration", "frame_index"
         ])

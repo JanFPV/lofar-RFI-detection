@@ -12,7 +12,7 @@ def start_observation():
 
     # NOTE: Output and temp directory are set to Flask's static folder for image visibility
     output_path = config.IMAGES_FOLDER
-    temp_dir = config.IMAGES_FOLDER
+    temp_dir = output_path + "temp"
 
     step = state.config["step"]
     max_threads = state.config["threads"]

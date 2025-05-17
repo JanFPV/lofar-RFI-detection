@@ -33,6 +33,7 @@ def wait_for_dat_file(input_path, sleep_interval=0.2):
             return os.path.join(input_path, files[0])  # Return first .dat file found
         time.sleep(sleep_interval)
 
+
 def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval, station_name, integration_time_s, rcu_mode, height, step=1, max_threads=4):
     # Get station type and number of RCU channels based on name
     station_type = get_station_type(station_name)
@@ -58,24 +59,24 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
     # Function executed by worker threads to generate images
     def process_block(block, subband, timestamp):
         try:
-            print(f"⚙️ Processing subband {subband} at {timestamp}")
+            print(f"Processing subband {subband} at {timestamp}")
             sky_img, nf_img, _ = make_xst_plots(
                 block, station_name, timestamp, subband, rcu_mode,
                 map_zoom=18, outputpath=temp_dir, mark_max_power=True,
-                height=height, return_only_paths=True
+                height=height, return_only_paths=True, caltable_dir=caltable_dir,
             )
-
+            print(f"Generated image for subband {subband} on path: {nf_img}")
             # Log the generated near-field image to the system state
             if nf_img:
                 filename = os.path.basename(nf_img)
                 state.add_image_entry(filename, subband=subband)
         except Exception as e:
-            print(f"❌ Error processing subband {subband}: {e}")
+            print(f"Error processing subband {subband}: {e}")
 
     # Create a pool of worker threads
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
         with open(filename, "rb") as f:
-            while True:
+            while state.is_observing:
                 # Read new data from the .dat stream
                 new_data = np.fromfile(f, dtype=np.complex128)
                 buffer = np.concatenate((buffer, new_data))
@@ -89,6 +90,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
 
                     # Step filtering: only process 1 of every N blocks
                     if block_counter % step != 0:
+                        # Here, the block could be saved to a file
                         continue  # Skip this block
 
                     # Prepare metadata for this block
@@ -96,12 +98,18 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     subband = min_subband + (subband_counter % (max_subband - min_subband + 1))
                     subband_counter += 1
 
+                    # Health checks: Check if processing can keep up with data inflow
+                    if buffer.size > max_threads*block_size and block_counter > max_threads + 1:
+                        continue  # Skip this block for now
+
                     # Send block to be processed by an available thread
                     executor.submit(process_block, block, subband, obstime)
 
                 # If no new data was read, wait before retrying
                 if new_data.size == 0:
                     time.sleep(sleep_interval)
+
+        print("Observation stopped from web interface.")
 
 
 
@@ -137,7 +145,7 @@ def obs_parser(obs_file):
                 line = line.replace("- ", "")
                 beam_data = line.split()
                 #source_name = get_source_name(beam_data[7].split("=")[1].replace('$', ''))
-                obs_data['beams'].append({'name': source_name, 'beamlets': beam_data[4].split("=")[1]})
+                #obs_data['beams'].append({'name': source_name, 'beamlets': beam_data[4].split("=")[1]})
     return obs_data
 
 

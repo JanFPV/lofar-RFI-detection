@@ -22,6 +22,10 @@ def index():
 
 @app.route("/start", methods=["POST"])
 def start():
+    if state.is_observing:
+        print("Observation is already running. Ignoring new request.")
+        return redirect("/")
+
     state.config["folder"] = request.form["folder"]
     state.config["threads"] = int(request.form["threads"])
     state.config["step"] = int(request.form["step"])
@@ -36,6 +40,7 @@ def start():
 def stop():
     state.is_observing = False
     state.save_log()
+    print("Observation stopped from web interface.")
     return redirect("/")
 
 if __name__ == "__main__":
