@@ -8,13 +8,15 @@ import pandas as pd
 import time
 import os
 import datetime
+import tempfile
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from lofarimaging import get_station_type, rcus_in_station, make_xst_plots
+from lofarimaging import get_station_type, rcus_in_station, make_xst_plots, read_acm_cube
 from webapp import state
+import config
 
 
 __all__ = [
@@ -23,6 +25,43 @@ __all__ = [
     "obs_parser",
     "get_subbands",
 ]
+
+def warmup_processing():
+    station_name=config.STATION_NAME
+    rcu_mode=config.RCU_MODE
+    height=config.HEIGHT_METERS
+    caltable_dir=config.CALTABLE_DIR
+
+    def _run():
+        try:
+            start_time = time.time()
+            print("Starting warmup image generation...")
+            with tempfile.TemporaryDirectory() as temp_dir:
+                #print(f"Using temp path: {temp_dir}")
+                station_type = get_station_type(station_name)
+                num_rcu = rcus_in_station(station_type)
+
+                with open(config.WARMUP_FILE, "rb") as f:
+                    block = np.fromfile(f, dtype=np.complex128).reshape((num_rcu, num_rcu))
+
+                #timestamp = config.WARMUP_OBSTIME
+                timestamp = datetime.datetime.now()
+                subband = config.WARMUP_SUBBAND
+
+                _, _, _ = make_xst_plots(
+                    block, station_name, timestamp, subband, rcu_mode,
+                    map_zoom=18, outputpath=temp_dir, mark_max_power=True,
+                    height=height, return_only_paths=True, caltable_dir=caltable_dir
+                )
+            duration = time.time() - start_time
+            print(f"Warmup image generated in {duration:.2f} seconds.")
+        except Exception as e:
+            #import traceback
+            #print("Warmup failed:")
+            #traceback.print_exc()
+            print(f"Warmup failed: {e}")
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 def wait_for_dat_file(input_path, sleep_interval=0.2):
@@ -42,7 +81,8 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
 
     # Wait until a .dat file appears in the input path
     filename = wait_for_dat_file(input_path)
-    print(f"📡 File {filename} detected. Starting real-time block reader...")
+    print(f"File {filename} detected.")
+    print(f"Starting real-time block reader...")
 
     # Buffer to accumulate streamed data
     buffer = np.array([], dtype=np.complex128)
@@ -59,13 +99,15 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
     # Function executed by worker threads to generate images
     def process_block(block, subband, timestamp):
         try:
+            start_time = time.time()
             print(f"Processing subband {subband} at {timestamp}")
             sky_img, nf_img, _ = make_xst_plots(
                 block, station_name, timestamp, subband, rcu_mode,
                 map_zoom=18, outputpath=temp_dir, mark_max_power=True,
                 height=height, return_only_paths=True, caltable_dir=caltable_dir,
             )
-            print(f"Generated image for subband {subband} on path: {nf_img}")
+            duration = time.time() - start_time
+            print(f"Subband {subband} processed in {duration:.2f} seconds")
             # Log the generated near-field image to the system state
             if nf_img:
                 filename = os.path.basename(nf_img)
@@ -88,19 +130,20 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
 
                     block_counter += 1
 
-                    # Step filtering: only process 1 of every N blocks
-                    if block_counter % step != 0:
-                        # Here, the block could be saved to a file
-                        continue  # Skip this block
-
-                    # Prepare metadata for this block
-                    obstime = datetime.datetime.now()
+                    # Increment subband_counter
                     subband = min_subband + (subband_counter % (max_subband - min_subband + 1))
                     subband_counter += 1
 
-                    # Health checks: Check if processing can keep up with data inflow
-                    if buffer.size > max_threads*block_size and block_counter > max_threads + 1:
-                        continue  # Skip this block for now
+                    # Step filtering: only process 1 of every N blocks
+                    if block_counter % step != 0:
+                        continue
+
+                    # Health checks: system is falling behind (currently inactive)
+                    # if buffer.size > max_threads * block_size and block_counter > max_threads + 1:
+                    #     pass  # Placeholder for future congestion control
+
+                    # Timestamp for the processed block
+                    obstime = datetime.datetime.now()
 
                     # Send block to be processed by an available thread
                     executor.submit(process_block, block, subband, obstime)

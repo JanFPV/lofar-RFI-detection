@@ -38,3 +38,7 @@ DEFAULT_OBSERVATION_CONFIG = {
     "step": 1
 }
 
+# Warmup file
+WARMUP_FILE = "./lofarimaging/rfi_tools/20230111_071514_xst.dat"
+WARMUP_SUBBAND = 120
+#WARMUP_OBSTIME =

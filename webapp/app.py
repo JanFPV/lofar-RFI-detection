@@ -5,13 +5,16 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+import config
 from webapp import state, processor
+from lofarimaging.rfi_tools.realtime import warmup_processing
+
 
 
 app = Flask(__name__)
 
-
 state.load_log()
+warmup_processing()
 
 
 @app.route("/")
