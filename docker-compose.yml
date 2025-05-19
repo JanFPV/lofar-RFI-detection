@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   web:
     image: ghcr.io/janfpv/lofar-rfi-detection:latest
@@ -7,6 +5,10 @@ services:
       - "5000:5000"
     volumes:
       - ./webapp/static/images:/app/webapp/static/images
-      - ./tmp:/data
+      - type: bind
+        source: /mnt/LOFAR0/erasmus_2025/tmp
+        target: /data
+        bind:
+          propagation: rprivate
     environment:
       - FLASK_ENV=production
