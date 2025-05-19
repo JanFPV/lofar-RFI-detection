@@ -3,9 +3,11 @@
 import getpass
 username = getpass.getuser()
 
-USE_SIMULATED_DAT = True
-SIMULATED_DAT_PATH = f"/home/{username}/Documents/LV614_image_data/xst/20241119_210154_xst.dat"
-SIMULATED_DAT_PATH = f"/home/{username}/Documents/LV614_image_data/xst/20241112_200014_xst.dat"
+# Configuration for simulated observation
+if username != "oper":
+    SIMULATED_DAT_PATH = f"/home/{username}/Documents/LV614_image_data/xst/20241119_210154_xst.dat"
+else:
+    SIMULATED_DAT_PATH = f"/mnt/LOFAR0/xst/20241119_210154_xst.dat"
 SIMULATED_SUBBAND_MIN = 61
 SIMULATED_SUBBAND_MAX = 182
 SIMULATED_OUTPUT_PATH = "tmp/simulated_observation_xst.dat"

@@ -7,6 +7,6 @@ services:
       - "5000:5000"
     volumes:
       - ./webapp/static/images:/app/webapp/static/images
-      - /mnt/LOFAR0/erasmus_2025:/data
+      - ./tmp:/data
     environment:
       - FLASK_ENV=production
