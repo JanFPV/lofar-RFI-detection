@@ -14,7 +14,7 @@ from lofarimaging.rfi_tools.realtime import warmup_processing
 app = Flask(__name__)
 
 state.load_log()
-warmup_processing()
+#warmup_processing()
 
 
 @app.route("/")

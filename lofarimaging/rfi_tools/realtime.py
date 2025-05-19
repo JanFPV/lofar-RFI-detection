@@ -93,8 +93,17 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
     # Read min/max subbands from metadata file
     min_subband, max_subband = get_subbands(input_path)
 
-    # Queue to hold blocks to be processed by workers
-    block_queue = queue.Queue()
+    pending_tasks = 0
+    pending_lock = threading.Lock()
+
+    def process_block_wrapper(block, subband, timestamp):
+        try:
+            process_block(block, subband, timestamp)
+        finally:
+            with pending_lock:
+                nonlocal pending_tasks
+                pending_tasks -= 1
+
 
     # Function executed by worker threads to generate images
     def process_block(block, subband, timestamp):
@@ -146,7 +155,13 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     obstime = datetime.datetime.now()
 
                     # Send block to be processed by an available thread
-                    executor.submit(process_block, block, subband, obstime)
+                    print(f"Submitting block {block_counter}, subband {subband}")
+                    with pending_lock:
+                        pending_tasks += 1
+                    executor.submit(process_block_wrapper, block, subband, obstime)
+                    with pending_lock:
+                        print(f"Pending threads in executor: {pending_tasks}")
+
 
                 # If no new data was read, wait before retrying
                 if new_data.size == 0:
