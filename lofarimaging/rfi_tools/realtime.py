@@ -1,7 +1,7 @@
 # lofarimaging/rfi_tools/realtime.py
 
 import threading
-import queue
+import pathlib
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
@@ -79,6 +79,8 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
     num_rcu = rcus_in_station(station_type)
     block_size = num_rcu * num_rcu
 
+    blocks_dir = os.path.join(output_path, "blocks")
+
     # Wait until a .dat file appears in the input path
     state.system_status = "Waiting for file..."
     filename = wait_for_dat_file(input_path)
@@ -128,7 +130,8 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
             # Log the generated near-field image to the system state
             if nf_img:
                 filename = os.path.basename(nf_img)
-                state.add_image_entry(filename, subband=subband, timestamp=timestamp)
+                rel_path = os.path.join(os.path.basename(state.observation_path), "images", filename)
+                state.add_image_entry(rel_path, subband=subband, timestamp=timestamp)
         except Exception as e:
             print(f"Error processing subband {subband}: {e}")
 
@@ -142,15 +145,30 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
 
                 # If enough data is accumulated to form a block, process it
                 while buffer.size >= block_size:
-                    block = buffer[:block_size].reshape((num_rcu, num_rcu))
+                    raw_block = buffer[:block_size].copy()
                     buffer = buffer[block_size:]
-
-                    block_counter += 1
-                    state.last_block = block_counter
 
                     # Increment subband_counter
                     subband = min_subband + (subband_counter % (max_subband - min_subband + 1))
                     subband_counter += 1
+
+                    # Timestamp for the processed block
+                    obstime = datetime.datetime.now()
+
+                    # Save raw block data to file for post-processing
+                    save_block_files(
+                        block=raw_block,
+                        timestamp=obstime,
+                        subband=subband,
+                        subband_min=min_subband,
+                        subband_max=max_subband,
+                        output_dir=os.path.join(output_path, "blocks")
+                    )
+
+                    block = raw_block.reshape((num_rcu, num_rcu))
+
+                    block_counter += 1
+                    state.last_block = block_counter
 
                     # Step filtering: only process 1 of every N blocks
                     if block_counter % step != 0:
@@ -159,9 +177,6 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     # Health checks: system is falling behind (currently inactive)
                     # if buffer.size > max_threads * block_size and block_counter > max_threads + 1:
                     #     pass  # Placeholder for future congestion control
-
-                    # Timestamp for the processed block
-                    obstime = datetime.datetime.now()
 
                     # Check if a shutdown was requested
                     if state.shutdown_requested:
@@ -192,6 +207,25 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
         state.save_log()
         print("Session log saved. System is now idle.")
 
+
+def save_block_files(block, timestamp, subband, subband_min, subband_max, output_dir):
+    # Format timestamp: 20230111_071302
+    time_str = timestamp.strftime("%Y%m%d_%H%M%S")
+    base_name = f"{time_str}_xst"
+
+    # Output paths for .dat and .h files
+    dat_path = os.path.join(output_dir, f"{base_name}.dat")
+    h_path   = os.path.join(output_dir, f"{base_name}.h")
+
+    # Save block data
+    block.astype(np.complex128).tofile(dat_path)
+
+    # Save metadata
+    with open(h_path, "w") as h_file:
+        h_file.write(f"--subbands={subband_min}:{subband_max}\n")
+        h_file.write(f"- rspctl --xcsubband={subband}\n")
+
+    # print(f"[BLOCK SAVED] {dat_path}, {h_path}")
 
 
 

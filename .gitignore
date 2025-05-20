@@ -11,7 +11,7 @@ notebooks/tilecache/*
 *.zip
 data/*
 tmp/*
-webapp/static/images/temp/*
+webapp/static/images/202*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

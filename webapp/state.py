@@ -62,8 +62,16 @@ def get_status():
         "step": config.get("step", None)
     }
 
-def save_log(path="webapp/session_log.json"):
+def save_log(path=None):
+    global observation_path
+    if path is None:
+        if observation_path:
+            path = os.path.join(observation_path, "session_log.json")
+        else:
+            path = "webapp/session_log.json"  # fallback por seguridad
+
     image_log.to_json(path, orient="records", indent=2)
+    print(f"[LOG] Saved session log to {path}")
 
 
 def load_log(path="webapp/session_log.json"):
@@ -81,3 +89,35 @@ def load_log(path="webapp/session_log.json"):
         image_log = pd.DataFrame(columns=[
             "timestamp", "filename", "subband", "status", "duration", "frame_index"
         ])
+
+
+def load_all_logs_by_observation(base_dir="webapp/static/images"):
+    logs_by_observation = {}
+
+    for folder in os.listdir(base_dir):
+        obs_path = os.path.join(base_dir, folder)
+        log_path = os.path.join(obs_path, "session_log.json")
+
+        if os.path.isdir(obs_path) and os.path.isfile(log_path):
+            try:
+                log_df = pd.read_json(log_path)
+                logs_by_observation[folder] = log_df
+                print(f"[LOG] Loaded log for observation {folder} ({len(log_df)} entries)")
+            except Exception as e:
+                print(f"[WARNING] Could not load log from {log_path}: {e}")
+
+    return logs_by_observation
+
+
+observation_path = None
+
+def create_observation_directory(base_dir="webapp/static/images"):
+    global observation_path
+    timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    observation_path = os.path.join(base_dir, timestamp)
+
+    os.makedirs(os.path.join(observation_path, "blocks"), exist_ok=True)
+    os.makedirs(os.path.join(observation_path, "images"), exist_ok=True)
+    os.makedirs(os.path.join(observation_path, "movies"), exist_ok=True)
+
+    print(f"[SETUP] Created observation directory at {observation_path}")

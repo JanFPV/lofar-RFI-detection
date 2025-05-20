@@ -12,10 +12,11 @@ import config
 
 def start_observation():
     input_path = state.config["folder"]
+    output_path = config.IMAGES_FOLDER
 
     # NOTE: Output and temp directory are set to Flask's static folder for image visibility
-    output_path = config.IMAGES_FOLDER
-    temp_dir = output_path + "temp"
+    state.create_observation_directory(base_dir=output_path)
+    temp_dir = os.path.join(state.observation_path, "images")
 
     step = state.config["step"]
     max_threads = state.config["threads"]
@@ -23,7 +24,7 @@ def start_observation():
     def run():
         read_blocks(
             input_path=input_path,
-            output_path=output_path,
+            output_path=state.observation_path,
             caltable_dir=config.CALTABLE_DIR,
             temp_dir=temp_dir,
             sleep_interval=config.SLEEP_INTERVAL,
