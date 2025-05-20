@@ -2,52 +2,196 @@
 <html>
 <head>
   <title>LOFAR RFI Control Panel</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #f2f2f2;
+    }
+    main {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+    }
+    section {
+      padding: 10px;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    #config-section, #status-section {
+      flex: 1;
+    }
+    #image-viewer {
+      flex: 2;
+      text-align: center;
+    }
+    #image-viewer img {
+      max-width: 100%;
+      height: auto;
+    }
+    #nav-buttons {
+      margin: 10px;
+    }
+    #subband-grid {
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-top: 10px;
+    }
+    #subband-grid button {
+      margin: 2px;
+      padding: 5px 10px;
+    }
+    .active-subband {
+      background-color: #d4edda;
+      border: 1px solid #28a745;
+      color: #155724;
+    }
+    #image-counter {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #666;
+    }
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+  </style>
 </head>
 <body>
-  <h1>LOFAR RFI Observation Panel</h1>
+  <header>
+    <h1>LOFAR RFI Control Panel</h1>
+    <div>
+      <a href="/">Realtime</a> |
+      <a href="/postprocessing">Post-processing</a>
+    </div>
+  </header>
 
-  <h2>Configuration</h2>
-  <!-- Observation setup form -->
-  <form action="/start" method="post">
-    Data folder: <input type="text" name="folder" value="{{ config.folder }}"><br>
-    Max threads: <input type="number" name="threads" value="{{ config.threads }}"><br>
-    Step (1 out of N images): <input type="number" name="step" value="{{ config.step }}"><br>
-    <button type="submit">Start observation</button>
-  </form>
+  <main>
+    <section id="config-section">
+      <h2>Observation Config</h2>
+      <form action="/start" method="post">
+        Data folder:<br><input type="text" name="folder" value="{{ config.folder }}"><br>
+        Max threads:<br><input type="number" name="threads" value="{{ config.threads }}"><br>
+        Step (1 out of N images):<br><input type="number" name="step" value="{{ config.step }}"><br>
+        <button type="submit">Start observation</button>
+      </form>
+      <form action="/stop" method="post" style="margin-top: 10px;">
+        <button type="submit">Stop observation</button>
+      </form>
+      <hr>
+      <h3>Previous sessions</h3>
+      <ul>
+        {% for name in past_observations %}
+          <li><a href="/static/images/{{ name }}/" target="_blank">{{ name }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
 
-  <!-- Stop button -->
-  <form action="/stop" method="post" style="margin-top: 10px;">
-    <button type="submit">Stop observation</button>
-  </form>
+    <section id="image-viewer">
+      <h2>Live Image Viewer</h2>
+      <div id="nav-buttons">
+        <button onclick="nextImage(); disableAutoReload()">&#9664;</button>
+        <button onclick="prevImage(); disableAutoReload()">&#9654;</button>
+        <button id="latest-button" onclick="enableAutoReload()" style="display:none;">Latest</button>
+      </div>
+      <div id="image-container">Loading image...</div>
+      <div id="image-counter"></div>
+      <div id="subband-grid"></div>
+    </section>
 
-<h2>System status (debug)</h2>
-<div id="status-block">
-  Loading status...
-</div>
-
-<h2>Last processed images</h2>
-<div id="image-list">
-  Loading images...
-</div>
+    <section id="status-section">
+      <h2>System Status</h2>
+      <div id="status-block">Loading status...</div>
+    </section>
+  </main>
 
 <script>
+let autoReload = true;
+let latestImages = [];
+let currentIndex = 0;
+
 function updateImages() {
+  if (!autoReload) return;
+
   fetch("/last-images")
     .then(res => res.json())
     .then(images => {
-      const container = document.getElementById("image-list");
-      container.innerHTML = "";
-      images.forEach(img => {
-        const block = document.createElement("div");
-        block.style.margin = "10px 0";
-        block.innerHTML = `
-          <strong>${img.filename}</strong><br>
-          Subband: ${img.subband} - Status: ${img.status}<br>
-          <img src="/static/images/${img.filename}?${Date.now()}" width="400"><br>
-        `;
-        container.appendChild(block);
-      });
+      latestImages = images.reverse();
+      currentIndex = latestImages.length - 1;
+      displayImage();
+      updateSubbandGrid();
     });
+}
+
+function displayImage() {
+  const container = document.getElementById("image-container");
+  const counter = document.getElementById("image-counter");
+
+  if (latestImages.length === 0) {
+    container.innerHTML = "No images available.";
+    counter.innerHTML = "";
+    return;
+  }
+
+  const img = latestImages[currentIndex];
+  container.innerHTML = `
+    <strong>${img.filename}</strong><br>
+    Subband: ${img.subband} - Status: ${img.status}<br>
+    <img src="/static/images/${img.filename}?${Date.now()}" width="500">
+  `;
+  counter.innerHTML = `Image ${currentIndex + 1} of ${latestImages.length}`;
+  updateSubbandGrid();
+}
+
+function prevImage() {
+  if (latestImages.length > 0) {
+    currentIndex = (currentIndex + 1) % latestImages.length;
+    displayImage();
+  }
+}
+
+function nextImage() {
+  if (latestImages.length > 0) {
+    currentIndex = (currentIndex - 1 + latestImages.length) % latestImages.length;
+    displayImage();
+  }
+}
+
+function disableAutoReload() {
+  autoReload = false;
+  document.getElementById("latest-button").style.display = "inline";
+}
+
+function enableAutoReload() {
+  autoReload = true;
+  updateImages();
+  document.getElementById("latest-button").style.display = "none";
+}
+
+function updateSubbandGrid() {
+  const grid = document.getElementById("subband-grid");
+  grid.innerHTML = "";
+  latestImages.forEach((img, idx) => {
+    const btn = document.createElement("button");
+    btn.textContent = img.subband;
+    if (idx === currentIndex) {
+      btn.classList.add("active-subband");
+    }
+    btn.onclick = () => {
+      currentIndex = idx;
+      disableAutoReload();
+      displayImage();
+    };
+    grid.appendChild(btn);
+  });
 }
 
 function updateStatus() {
@@ -74,12 +218,10 @@ function updateStatus() {
 setInterval(() => {
   updateImages();
   updateStatus();
-}, 3000); // cada 3 segundos
+}, 5000);
 
 updateImages();
-updateStatus(); // inicial
+updateStatus();
 </script>
-
-
 </body>
 </html>

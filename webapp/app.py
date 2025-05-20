@@ -25,10 +25,11 @@ def index():
     last_images = (
         sorted_log
         .sort_values(by="timestamp", ascending=False)
-        .head(5)
+        .head(20)
         .to_dict(orient="records")
     )
-    return render_template("index.html", config=state.config, images=last_images, status=state.get_status())
+    past_observations = sorted(os.listdir(config.IMAGES_FOLDER), reverse=True)
+    return render_template("index.html", config=state.config, images=last_images, past_observations=past_observations, status=state.get_status())
 
 
 @app.route("/start", methods=["POST"])
@@ -59,9 +60,23 @@ def stop():
 
 @app.route("/last-images")
 def last_images():
-    sorted_log = state.image_log.copy()
-    sorted_log["timestamp"] = pd.to_datetime(sorted_log["timestamp"], errors="coerce")
-    latest = sorted_log.sort_values(by="timestamp", ascending=False).head(5)
+    if not state.observation_path:
+        return jsonify([])
+
+    obs_name = os.path.basename(state.observation_path)
+
+    if state.is_observing:
+        log = state.image_log.copy()
+        # print(f"[LIVE] Returning in-memory log: {len(log)} entries")
+    else:
+        log = state.past_observations.get(obs_name)
+        # print(f"[LOG FILE] Returning saved log for {obs_name}: {len(log) if log is not None else 0} entries")
+
+    if log is None or log.empty:
+        return jsonify([])
+
+    log["timestamp"] = pd.to_datetime(log["timestamp"], errors="coerce")
+    latest = log.sort_values(by="timestamp", ascending=False).head(20)
     return jsonify(latest.to_dict(orient="records"))
 
 

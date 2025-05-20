@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LOFAR RFI Control Panel</title>
+</head>
+<body>
+  <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
+    <h1>LOFAR RFI Control Panel</h1>
+    <div>
+      <a href="/" style="margin-right: 15px;">Realtime</a>
+      <a href="/postprocessing">Post-processing</a> <!-- esta ruta será para futuro -->
+    </div>
+  </div>
+  <hr>
+
+  <h2>Configuration</h2>
+  <!-- Observation setup form -->
+  <form action="/start" method="post">
+    Data folder: <input type="text" name="folder" value="{{ config.folder }}"><br>
+    Max threads: <input type="number" name="threads" value="{{ config.threads }}"><br>
+    Step (1 out of N images): <input type="number" name="step" value="{{ config.step }}"><br>
+    <button type="submit">Start observation</button>
+  </form>
+
+  <!-- Stop button -->
+  <form action="/stop" method="post" style="margin-top: 10px;">
+    <button type="submit">Stop observation</button>
+  </form>
+
+<h2>System status (debug)</h2>
+<div id="status-block">
+  Loading status...
+</div>
+
+<h2>Last processed images</h2>
+<div id="image-list">
+  Loading images...
+</div>
+
+<script>
+function updateImages() {
+  fetch("/last-images")
+    .then(res => res.json())
+    .then(images => {
+      const container = document.getElementById("image-list");
+      container.innerHTML = "";
+      images.forEach(img => {
+        const block = document.createElement("div");
+        block.style.margin = "10px 0";
+        block.innerHTML = `
+          <strong>${img.filename}</strong><br>
+          Subband: ${img.subband} - Status: ${img.status}<br>
+          <img src="/static/images/${img.filename}?${Date.now()}" width="400"><br>
+        `;
+        container.appendChild(block);
+      });
+    });
+}
+
+function updateStatus() {
+  fetch("/system-status")
+    .then(res => res.json())
+    .then(status => {
+      const container = document.getElementById("status-block");
+      container.innerHTML = `
+        <ul>
+          <li>Status: ${status.status}</li>
+          <li>Current .dat file: ${status.current_dat_file}</li>
+          <li>Subband range: ${status.subband_range[0]} – ${status.subband_range[1]}</li>
+          <li>Max. threads: ${status.threads}</li>
+          <li>Step: 1 in ${status.step}</li>
+          <li>Blocks received: ${status.last_block}</li>
+          <li>Last subband processed: ${status.last_subband}</li>
+          <li>Threads in queue: ${status.pending_threads}</li>
+          <li>Avg. processing time: ${status.avg_processing_time} s</li>
+        </ul>
+      `;
+    });
+}
+
+setInterval(() => {
+  updateImages();
+  updateStatus();
+}, 3000); // cada 3 segundos
+
+updateImages();
+updateStatus(); // inicial
+</script>
+
+
+</body>
+</html>

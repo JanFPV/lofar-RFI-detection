@@ -14,6 +14,7 @@ import config as app_config
 is_observing = False
 shutdown_requested = False
 system_status = "Idle"  # "Running", "Stopping...", "Idle"
+past_observations = {}
 
 # Active configuration
 config = app_config.DEFAULT_OBSERVATION_CONFIG.copy()
@@ -72,6 +73,7 @@ def save_log(path=None):
 
     image_log.to_json(path, orient="records", indent=2)
     print(f"[LOG] Saved session log to {path}")
+    past_observations = load_all_logs_by_observation()
 
 
 def load_log(path="webapp/session_log.json"):
