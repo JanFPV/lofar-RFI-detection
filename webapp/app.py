@@ -1,6 +1,6 @@
 # webapp/app.py
 
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, redirect, jsonify, abort
 import sys
 import os
 import pandas as pd
@@ -83,6 +83,22 @@ def last_images():
 @app.route("/system-status")
 def system_status():
     return jsonify(state.get_status())
+
+
+@app.route("/observation/<obs_name>/")
+def browse_observation(obs_name):
+    folder_path = os.path.join("webapp/static/images", obs_name)
+    if not os.path.exists(folder_path):
+        abort(404)
+
+    file_list = []
+    for root, _, files in os.walk(folder_path):
+        rel_root = os.path.relpath(root, folder_path)
+        for f in files:
+            rel_path = os.path.join(rel_root, f) if rel_root != '.' else f
+            file_list.append(rel_path)
+
+    return render_template("browse.html", obs_name=obs_name, files=sorted(file_list))
 
 
 if __name__ == "__main__":
