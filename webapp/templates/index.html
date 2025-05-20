@@ -20,6 +20,19 @@
     <button type="submit">Stop observation</button>
   </form>
 
+  <h2>System status</h2>
+<ul>
+  <li>Status: {{ status.status }}</li>
+  <li>Current .dat file: {{ status.current_dat_file }}</li>
+  <li>Subband range: {{ status.subband_range[0] }} – {{ status.subband_range[1] }}</li>
+  <li>Max. threads: {{ status.threads }}</li>
+  <li>Step: 1 in {{ status.step }}</li>
+  <li>Blocks received: {{ status.last_block }}</li>
+  <li>Last subband processed: {{ status.last_subband }}</li>
+  <li>Theads in queue: {{ status.pending_threads }}</li>
+  <li>Avg. processing time: {{ status.avg_processing_time }} s</li>
+</ul>
+
   <h2>Last processed images</h2>
   <!-- Display the 5 latest images with metadata -->
   {% for img in images %}

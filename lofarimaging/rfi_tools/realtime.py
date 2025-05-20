@@ -80,6 +80,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
     block_size = num_rcu * num_rcu
 
     # Wait until a .dat file appears in the input path
+    state.system_status = "Waiting for file..."
     filename = wait_for_dat_file(input_path)
     print(f"File {filename} detected.")
     print(f"Starting real-time block reader...")
@@ -91,36 +92,43 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
     subband_counter = 0    # Tracks current subband for image labeling
 
     # Read min/max subbands from metadata file
+    state.system_status = "Running"
+    state.current_dat_file = os.path.basename(filename)
     min_subband, max_subband = get_subbands(input_path)
-
-    pending_tasks = 0
-    pending_lock = threading.Lock()
+    state.subband_range = (min_subband, max_subband)
 
     def process_block_wrapper(block, subband, timestamp):
         try:
+            # Check before processing begins
+            if state.shutdown_requested:
+                print(f"[CANCELLED] Block with subband {subband} ignored — shutdown in progress.")
+                return
             process_block(block, subband, timestamp)
         finally:
-            with pending_lock:
-                nonlocal pending_tasks
-                pending_tasks -= 1
-
+            with state.pending_lock:
+                state.pending_tasks -= 1
 
     # Function executed by worker threads to generate images
     def process_block(block, subband, timestamp):
         try:
             start_time = time.time()
             print(f"Processing subband {subband} at {timestamp}")
-            sky_img, nf_img, _ = make_xst_plots(
+            _, nf_img, _ = make_xst_plots(
                 block, station_name, timestamp, subband, rcu_mode,
                 map_zoom=18, outputpath=temp_dir, mark_max_power=True,
                 height=height, return_only_paths=True, caltable_dir=caltable_dir,
             )
             duration = time.time() - start_time
+            with state.pending_lock:
+                state.processing_times.append(duration)
+                if len(state.processing_times) > 10:
+                    state.processing_times = state.processing_times[-10:]
+
             print(f"Subband {subband} processed in {duration:.2f} seconds")
             # Log the generated near-field image to the system state
             if nf_img:
                 filename = os.path.basename(nf_img)
-                state.add_image_entry(filename, subband=subband)
+                state.add_image_entry(filename, subband=subband, timestamp=timestamp)
         except Exception as e:
             print(f"Error processing subband {subband}: {e}")
 
@@ -138,6 +146,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     buffer = buffer[block_size:]
 
                     block_counter += 1
+                    state.last_block = block_counter
 
                     # Increment subband_counter
                     subband = min_subband + (subband_counter % (max_subband - min_subband + 1))
@@ -154,20 +163,35 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     # Timestamp for the processed block
                     obstime = datetime.datetime.now()
 
+                    # Check if a shutdown was requested
+                    if state.shutdown_requested:
+                        print(f"[STOP] Block {block_counter} skipped.")
+                        continue
+
                     # Send block to be processed by an available thread
                     print(f"Submitting block {block_counter}, subband {subband}")
-                    with pending_lock:
-                        pending_tasks += 1
+                    with state.pending_lock:
+                        state.pending_tasks += 1
+
                     executor.submit(process_block_wrapper, block, subband, obstime)
-                    with pending_lock:
-                        print(f"Pending threads in executor: {pending_tasks}")
+
+                    with state.pending_lock:
+                        print(f"Pending threads in executor: {state.pending_tasks}")
 
 
                 # If no new data was read, wait before retrying
                 if new_data.size == 0:
                     time.sleep(sleep_interval)
 
-        print("Observation stopped from web interface.")
+        print("Waiting for remaining threads to finish...")
+        executor.shutdown(wait=True)
+        print("All threads completed.")
+
+        # Reset state and save final log
+        state.system_status = "Idle"
+        state.save_log()
+        print("Session log saved. System is now idle.")
+
 
 
 

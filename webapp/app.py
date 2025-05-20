@@ -3,6 +3,7 @@
 from flask import Flask, render_template, request, redirect
 import sys
 import os
+import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import config
@@ -19,9 +20,16 @@ state.load_log()
 
 @app.route("/")
 def index():
-    # Últimas 5 imágenes
-    last_images = state.image_log.tail(5).to_dict(orient="records")
-    return render_template("index.html", config=state.config, images=last_images)
+    sorted_log = state.image_log.copy()
+    sorted_log["timestamp"] = pd.to_datetime(sorted_log["timestamp"], errors="coerce")
+    last_images = (
+        sorted_log
+        .sort_values(by="timestamp", ascending=False)
+        .head(5)
+        .to_dict(orient="records")
+    )
+    return render_template("index.html", config=state.config, images=last_images, status=state.get_status())
+
 
 @app.route("/start", methods=["POST"])
 def start():
@@ -33,17 +41,19 @@ def start():
     state.config["threads"] = int(request.form["threads"])
     state.config["step"] = int(request.form["step"])
     state.is_observing = True
+    state.shutdown_requested = False
+    state.system_status = "Running"
 
     processor.start_observation()
-
     return redirect("/")
 
 
 @app.route("/stop", methods=["POST"])
 def stop():
+    state.shutdown_requested = True
     state.is_observing = False
-    state.save_log()
-    print("Observation stopped from web interface.")
+    state.system_status = "Stopping..."
+    print("Stop requested via web interface.")
     return redirect("/")
 
 if __name__ == "__main__":

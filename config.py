@@ -40,8 +40,8 @@ SLEEP_INTERVAL = 0.2
 # Default runtime configuration
 DEFAULT_OBSERVATION_CONFIG = {
     "folder": "/data",
-    "threads": 4,
-    "step": 1
+    "threads": 8,
+    "step": 4
 }
 
 # Warmup file
