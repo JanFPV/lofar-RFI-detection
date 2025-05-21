@@ -6,7 +6,7 @@ services:
     volumes:
       - ./webapp/static/images:/app/webapp/static/images
       - type: bind
-        source: /mnt/LOFAR0/erasmus_2025/tmp
+        source: /mnt/LOFAR0/erasmus_2025
         target: /data
         bind:
           propagation: rprivate

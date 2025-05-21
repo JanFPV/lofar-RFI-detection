@@ -9,7 +9,7 @@ if username != "oper":
     SIMULATED_OUTPUT_PATH = "tmp/simulated_observation_xst.dat"
 else:
     SIMULATED_DAT_PATH = f"/mnt/LOFAR0/xst/20241119_210154_xst.dat"
-    SIMULATED_OUTPUT_PATH = "/mnt/LOFAR0/erasmus_2025/tmp/simulated_observation_xst.dat"
+    SIMULATED_OUTPUT_PATH = "/mnt/LOFAR0/erasmus_2025/simulated_observation_xst.dat"
 
 SIMULATED_SUBBAND_MIN = 61
 SIMULATED_SUBBAND_MAX = 182
