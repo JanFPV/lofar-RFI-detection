@@ -81,6 +81,8 @@
         Data folder:<br><input type="text" name="folder" value="{{ config.folder }}"><br>
         Max threads:<br><input type="number" name="threads" value="{{ config.threads }}"><br>
         Step (1 out of N images):<br><input type="number" name="step" value="{{ config.step }}"><br>
+        Height (m):<br><input type="number" name="height_m" value="{{ config.height_m }}" step="0.1"><br>
+        Extent (m):<br><input type="number" name="extent" value="{{ config.extent }}"><br>
         <button type="submit">Start observation</button>
       </form>
       <form action="/stop" method="post" style="margin-top: 10px;">

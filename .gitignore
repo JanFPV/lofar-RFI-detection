@@ -3,8 +3,9 @@ video/*
 results_auto/*
 
 # LOFAR
+notebooks/results/*
 results/*
-results_auto/*
+notebooks/results_auto/*
 tilecache/*
 notebooks/tilecache/*
 .idea

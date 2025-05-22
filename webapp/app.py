@@ -41,6 +41,9 @@ def start():
     state.config["folder"] = request.form["folder"]
     state.config["threads"] = int(request.form["threads"])
     state.config["step"] = int(request.form["step"])
+    state.config["height_m"] = float(request.form["height_m"])
+    state.config["extent"] = float(request.form["extent"])
+
     state.is_observing = True
     state.shutdown_requested = False
     state.system_status = "Running"

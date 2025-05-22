@@ -73,7 +73,7 @@ def wait_for_dat_file(input_path, sleep_interval=0.2):
         time.sleep(sleep_interval)
 
 
-def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval, station_name, integration_time_s, rcu_mode, height, step=1, max_threads=4):
+def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval, station_name, integration_time_s, rcu_mode, height, extent, pixels_per_metre, step=1, max_threads=4):
     # Get station type and number of RCU channels based on name
     station_type = get_station_type(station_name)
     num_rcu = rcus_in_station(station_type)
@@ -119,6 +119,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                 block, station_name, timestamp, subband, rcu_mode,
                 map_zoom=18, outputpath=temp_dir, mark_max_power=True,
                 height=height, return_only_paths=True, caltable_dir=caltable_dir,
+                extent=extent, pixels_per_metre=pixels_per_metre,
             )
             duration = time.time() - start_time
             with state.pending_lock:

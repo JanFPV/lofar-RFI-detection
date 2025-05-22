@@ -20,6 +20,14 @@ def start_observation():
 
     step = state.config["step"]
     max_threads = state.config["threads"]
+    height = state.config["height_m"]
+
+    extent_m = state.config["extent"]
+    extent = [-extent_m, extent_m, -extent_m, extent_m]
+    x_width = extent[1] - extent[0]
+    y_height = extent[3] - extent[2]
+    max_range = max(x_width, y_height)
+    pixels_per_metre = 150 / max_range
 
     def run():
         read_blocks(
@@ -31,7 +39,9 @@ def start_observation():
             station_name=config.STATION_NAME,
             integration_time_s=config.INTEGRATION_TIME_S,
             rcu_mode=config.RCU_MODE,
-            height=config.HEIGHT_METERS,
+            height=height,
+            extent=extent,
+            pixels_per_metre=pixels_per_metre,
             step=step,
             max_threads=max_threads
         )

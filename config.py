@@ -27,14 +27,15 @@ CALTABLE_DIR = "CalTables/"
 STATION_NAME = "LV614"
 INTEGRATION_TIME_S = 2
 RCU_MODE = 3
-HEIGHT_METERS = 1.5
 SLEEP_INTERVAL = 0.2
 
 # Default runtime configuration
 DEFAULT_OBSERVATION_CONFIG = {
     "folder": "/data",
     "threads": 8,
-    "step": 4
+    "step": 4,
+    "height_m": 1.5,
+    "extent": 150,
 }
 
 # Warmup file
