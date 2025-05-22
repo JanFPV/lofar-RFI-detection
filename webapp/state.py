@@ -59,9 +59,12 @@ def get_status():
         "avg_processing_time": avg_time,
         "current_dat_file": current_dat_file,
         "subband_range": subband_range,
-        "threads": config.get("threads", None),
-        "step": config.get("step", None)
+        "threads": config.get("threads"),
+        "step": config.get("step"),
+        "height_m": config.get("height_m"),
+        "extent": config.get("extent"),
     }
+
 
 def save_log(path=None):
     global observation_path

@@ -22,6 +22,7 @@ FLASK_HOST = "0.0.0.0"
 IMAGES_FOLDER = "webapp/static/images/"
 LOG_PATH = "session_log.json"
 CALTABLE_DIR = "CalTables/"
+LOG_PATH = "webapp/logs/server.log"
 
 # Observation parameters
 STATION_NAME = "LV614"

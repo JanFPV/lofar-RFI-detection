@@ -111,6 +111,7 @@
 
     <section id="status-section">
       <h2>System Status</h2>
+      <div id="system-status-label" style="font-size: 22px; font-weight: bold;">Status: ...</div>
       <div id="status-block">Loading status...</div>
     </section>
   </main>
@@ -201,13 +202,31 @@ function updateStatus() {
     .then(res => res.json())
     .then(status => {
       const container = document.getElementById("status-block");
+
+      // Set colored status label
+      const statusLabel = document.getElementById("system-status-label");
+      let color = "black";
+      if (status.status.toLowerCase().includes("running")) color = "green";
+      else if (status.status.toLowerCase().includes("stopping")) color = "red";
+      else if (status.status.toLowerCase().includes("waiting")) color = "orange";
+      else color = "black";
+
+      statusLabel.style.color = color;
+      statusLabel.textContent = `Status: ${status.status}`;
+
       container.innerHTML = `
+        <h4>Configuration</h4>
         <ul>
-          <li>Status: ${status.status}</li>
+          <li>Threads: ${status.threads}</li>
+          <li>Step: 1 in ${status.step}</li>
+          <li>Height: ${status.height_m} m</li>
+          <li>Extent: ±${status.extent} m</li>
+        </ul>
+        <br>
+        <h4>Runtime</h4>
+        <ul>
           <li>Current .dat file: ${status.current_dat_file}</li>
           <li>Subband range: ${status.subband_range[0]} – ${status.subband_range[1]}</li>
-          <li>Max. threads: ${status.threads}</li>
-          <li>Step: 1 in ${status.step}</li>
           <li>Blocks received: ${status.last_block}</li>
           <li>Last subband processed: ${status.last_subband}</li>
           <li>Threads in queue: ${status.pending_threads}</li>
