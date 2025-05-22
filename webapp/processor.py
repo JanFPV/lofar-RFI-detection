@@ -3,12 +3,18 @@
 import threading
 import os
 import sys
+import logging
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from lofarimaging.rfi_tools.realtime import read_blocks
 from webapp import state
 import config
+
+
+# Logging setup
+logger = logging.getLogger("lofar")
+
 
 def start_observation():
     input_path = state.config["folder"]

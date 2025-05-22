@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import threading
 import datetime
+import logging
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -23,6 +24,9 @@ config = app_config.DEFAULT_OBSERVATION_CONFIG.copy()
 image_log = pd.DataFrame(columns=[
     "timestamp", "filename", "subband", "status", "duration", "frame_index"
 ])
+
+# Logging setup
+logger = logging.getLogger("lofar")
 
 # System state for the web interface
 last_block = 0
@@ -72,10 +76,11 @@ def save_log(path=None):
         if observation_path:
             path = os.path.join(observation_path, "session_log.json")
         else:
-            path = "webapp/session_log.json"  # fallback por seguridad
+            path = "webapp/session_log.json"
 
     image_log.to_json(path, orient="records", indent=2)
     print(f"[LOG] Saved session log to {path}")
+    logger.info(f"[LOG] Saved session log to {path}")
     past_observations = load_all_logs_by_observation()
 
 
@@ -86,11 +91,13 @@ def load_log(path="webapp/session_log.json"):
             image_log = pd.read_json(path)
         except ValueError:
             print("session_log.json is invalid or empty. Reinitializing log.")
+            logger.warning("session_log.json is invalid or empty. Reinitializing log.")
             image_log = pd.DataFrame(columns=[
                 "timestamp", "filename", "subband", "status", "duration", "frame_index"
             ])
     else:
         print("session_log.json not found or empty. Initializing empty log.")
+        logger.warning("session_log.json not found or empty. Initializing empty log.")
         image_log = pd.DataFrame(columns=[
             "timestamp", "filename", "subband", "status", "duration", "frame_index"
         ])
@@ -108,8 +115,10 @@ def load_all_logs_by_observation(base_dir="webapp/static/images"):
                 log_df = pd.read_json(log_path)
                 logs_by_observation[folder] = log_df
                 print(f"[LOG] Loaded log for observation {folder} ({len(log_df)} entries)")
+                logger.info(f"[LOG] Loaded log for observation {folder} ({len(log_df)} entries)")
             except Exception as e:
                 print(f"[WARNING] Could not load log from {log_path}: {e}")
+                logger.warning(f"[WARNING] Could not load log from {log_path}: {e}")
 
     return logs_by_observation
 
@@ -126,3 +135,4 @@ def create_observation_directory(base_dir="webapp/static/images"):
     os.makedirs(os.path.join(observation_path, "movies"), exist_ok=True)
 
     print(f"[SETUP] Created observation directory at {observation_path}")
+    logger.info(f"[SETUP] Created observation directory at {observation_path}")

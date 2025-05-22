@@ -8,6 +8,7 @@ import pandas as pd
 import time
 import os
 import datetime
+import logging
 import tempfile
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -26,6 +27,11 @@ __all__ = [
     "get_subbands",
 ]
 
+
+# Logging setup
+logger = logging.getLogger("lofar")
+
+
 def warmup_processing():
     station_name=config.STATION_NAME
     rcu_mode=config.RCU_MODE
@@ -36,6 +42,7 @@ def warmup_processing():
         try:
             start_time = time.time()
             print("Starting warmup image generation...")
+            logger.info("Starting warmup image generation...")
             with tempfile.TemporaryDirectory() as temp_dir:
                 #print(f"Using temp path: {temp_dir}")
                 station_type = get_station_type(station_name)
@@ -55,17 +62,20 @@ def warmup_processing():
                 )
             duration = time.time() - start_time
             print(f"Warmup image generated in {duration:.2f} seconds.")
+            logger.info(f"Warmup image generated in {duration:.2f} seconds.")
         except Exception as e:
             #import traceback
             #print("Warmup failed:")
             #traceback.print_exc()
             print(f"Warmup failed: {e}")
+            logger.error(f"Warmup failed: {e}")
 
     threading.Thread(target=_run, daemon=True).start()
 
 
 def wait_for_dat_file(input_path, sleep_interval=0.2):
     print(f"Waiting for a .dat file in {input_path}...")
+    logger.info(f"Waiting for a .dat file in {input_path}...")
     while True:
         files = [f for f in os.listdir(input_path) if f.endswith("_xst.dat")]
         if files:
@@ -86,6 +96,8 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
     filename = wait_for_dat_file(input_path)
     print(f"File {filename} detected.")
     print(f"Starting real-time block reader...")
+    logger.info(f"File {filename} detected.")
+    logger.info(f"Starting real-time block reader...")
 
     # Buffer to accumulate streamed data
     buffer = np.array([], dtype=np.complex128)
@@ -104,6 +116,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
             # Check before processing begins
             if state.shutdown_requested:
                 print(f"[CANCELLED] Block with subband {subband} ignored — shutdown in progress.")
+                logger.info(f"[CANCELLED] Block with subband {subband} ignored — shutdown in progress.")
                 return
             process_block(block, subband, timestamp)
         finally:
@@ -115,6 +128,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
         try:
             start_time = time.time()
             print(f"Processing subband {subband} at {timestamp}")
+            logger.info(f"Processing subband {subband} at {timestamp}")
             _, nf_img, _ = make_xst_plots(
                 block, station_name, timestamp, subband, rcu_mode,
                 map_zoom=18, outputpath=temp_dir, mark_max_power=True,
@@ -128,6 +142,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     state.processing_times = state.processing_times[-10:]
 
             print(f"Subband {subband} processed in {duration:.2f} seconds")
+            logger.info(f"Subband {subband} processed in {duration:.2f} seconds")
             # Log the generated near-field image to the system state
             if nf_img:
                 filename = os.path.basename(nf_img)
@@ -135,6 +150,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                 state.add_image_entry(rel_path, subband=subband, timestamp=timestamp)
         except Exception as e:
             print(f"Error processing subband {subband}: {e}")
+            logger.error(f"Error processing subband {subband}: {e}")
 
     # Create a pool of worker threads
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
@@ -182,10 +198,12 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     # Check if a shutdown was requested
                     if state.shutdown_requested:
                         print(f"[STOP] Block {block_counter} skipped.")
+                        logger.info(f"[STOP] Block {block_counter} skipped.")
                         continue
 
                     # Send block to be processed by an available thread
                     print(f"Submitting block {block_counter}, subband {subband}")
+                    logger.info(f"Submitting block {block_counter}, subband {subband}")
                     with state.pending_lock:
                         state.pending_tasks += 1
 
@@ -193,6 +211,7 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
 
                     with state.pending_lock:
                         print(f"Pending threads in executor: {state.pending_tasks}")
+                        logger.info(f"Pending threads in executor: {state.pending_tasks}")
 
 
                 # If no new data was read, wait before retrying
@@ -200,13 +219,16 @@ def read_blocks(input_path, output_path, caltable_dir, temp_dir, sleep_interval,
                     time.sleep(sleep_interval)
 
         print("Waiting for remaining threads to finish...")
+        logger.info("Waiting for remaining threads to finish...")
         executor.shutdown(wait=True)
         print("All threads completed.")
+        logger.info("All threads completed.")
 
         # Reset state and save final log
         state.system_status = "Idle"
         state.save_log()
         print("Session log saved. System is now idle.")
+        logger.info("Session log saved. System is now idle.")
 
 
 def save_block_files(block, timestamp, subband, subband_min, subband_max, output_dir):
@@ -227,8 +249,7 @@ def save_block_files(block, timestamp, subband, subband_min, subband_max, output
         h_file.write(f"- rspctl --xcsubband={subband}\n")
 
     # print(f"[BLOCK SAVED] {dat_path}, {h_path}")
-
-
+    logger.debug(f"[BLOCK SAVED] {dat_path}, {h_path}")
 
 
 def obs_parser(obs_file):

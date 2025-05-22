@@ -3,6 +3,7 @@
 from flask import Flask, render_template, request, redirect, jsonify, abort
 import sys
 import os
+import logging
 import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -11,6 +12,18 @@ from webapp import state, processor
 from lofarimaging.rfi_tools.realtime import warmup_processing
 
 
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s: %(message)s",
+    handlers=[
+        logging.FileHandler(config.LOG_PATH),
+        logging.StreamHandler(sys.stdout),
+    ]
+)
+
+logger = logging.getLogger("lofar")
+logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
@@ -36,6 +49,7 @@ def index():
 def start():
     if state.is_observing:
         print("Observation is already running. Ignoring new request.")
+        logger.warning("Observation is already running. Ignoring new request.")
         return redirect("/")
 
     state.config["folder"] = request.form["folder"]
@@ -58,6 +72,7 @@ def stop():
     state.is_observing = False
     state.system_status = "Stopping..."
     print("Stop requested via web interface.")
+    logger.info("Stop requested via web interface.")
     return redirect("/")
 
 
@@ -86,6 +101,24 @@ def last_images():
 @app.route("/system-status")
 def system_status():
     return jsonify(state.get_status())
+
+@app.route("/logs")
+def view_logs():
+    try:
+        with open(config.LOG_PATH, "r") as f:
+            lines = f.readlines()
+
+        filtered = [
+            line for line in lines
+            if not (
+                ('GET' in line or 'POST' in line) and 'HTTP/1.1' in line
+            )
+        ]
+
+        filtered = [line.strip() for line in filtered if line.strip()]
+        return "\n".join(filtered[-20:])
+    except Exception as e:
+        return f"Log not available: {e}", 500
 
 
 @app.route("/observation/<obs_name>/")

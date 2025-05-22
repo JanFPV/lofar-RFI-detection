@@ -7,62 +7,100 @@
       font-family: sans-serif;
       margin: 0;
       padding: 0;
+      overflow: hidden;
     }
+
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 20px;
+      padding: 4px 12px;
+      font-size: 12px;
       background-color: #f2f2f2;
     }
+
     main {
       display: flex;
-      gap: 20px;
-      padding: 20px;
-    }
-    section {
+      gap: 10px;
       padding: 10px;
+      height: calc(100vh - 80px - 3.5em); /* header + log footer */
+      overflow: hidden;
+    }
+
+    section {
+      padding: 8px;
       background: #fafafa;
       border: 1px solid #ddd;
-      border-radius: 8px;
+      border-radius: 6px;
+      overflow: auto;
     }
+
     #config-section, #status-section {
       flex: 1;
     }
+
     #image-viewer {
       flex: 2;
       text-align: center;
+      padding: 0;
     }
+
     #image-viewer img {
       max-width: 100%;
-      height: auto;
+      max-height: 75vh;
     }
+
     #nav-buttons {
-      margin: 10px;
+      margin: 4px;
     }
+
     #subband-grid {
       overflow-x: auto;
       white-space: nowrap;
-      padding-top: 10px;
+      padding-top: 4px;
+      font-size: 12px;
     }
+
     #subband-grid button {
-      margin: 2px;
-      padding: 5px 10px;
+      margin: 1px;
+      padding: 3px 6px;
     }
+
     .active-subband {
       background-color: #d4edda;
       border: 1px solid #28a745;
       color: #155724;
     }
+
     #image-counter {
-      margin-top: 5px;
-      font-size: 14px;
+      margin-top: 2px;
+      font-size: 12px;
       color: #666;
     }
+
     a {
       text-decoration: none;
       color: #007bff;
     }
+
+    #log-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3.5em;
+      background: #222;
+      color: #eee;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.2em;
+      padding: 4px 10px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      border-top: 1px solid #444;
+      white-space: pre-line;
+    }
+
   </style>
 </head>
 <body>
@@ -98,7 +136,6 @@
     </section>
 
     <section id="image-viewer">
-      <h2>Live Image Viewer</h2>
       <div id="nav-buttons">
         <button onclick="nextImage(); disableAutoReload()">&#9664;</button>
         <button onclick="prevImage(); disableAutoReload()">&#9654;</button>
@@ -114,6 +151,7 @@
       <div id="system-status-label" style="font-size: 22px; font-weight: bold;">Status: ...</div>
       <div id="status-block">Loading status...</div>
     </section>
+    <pre id="log-footer">[log loading]</pre>
   </main>
 
 <script>
@@ -146,8 +184,6 @@ function displayImage() {
 
   const img = latestImages[currentIndex];
   container.innerHTML = `
-    <strong>${img.filename}</strong><br>
-    Subband: ${img.subband} - Status: ${img.status}<br>
     <img src="/static/images/${img.filename}?${Date.now()}" width="500">
   `;
   counter.innerHTML = `Image ${currentIndex + 1} of ${latestImages.length}`;
@@ -236,11 +272,31 @@ function updateStatus() {
     });
 }
 
+function updateLogFooter() {
+  fetch("/logs")
+    .then(res => res.text())
+    .then(logText => {
+      const logContainer = document.getElementById("log-footer");
+
+      const lines = logText
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      const last20 = lines.slice(-20);
+      logContainer.textContent = last20.join("\n");
+
+      logContainer.scrollTop = logContainer.scrollHeight;
+    });
+}
+
 setInterval(() => {
   updateImages();
   updateStatus();
+  updateLogFooter();
 }, 5000);
 
+updateLogFooter();
 updateImages();
 updateStatus();
 </script>
