@@ -5,21 +5,14 @@ username = getpass.getuser()
 
 # Configuration for simulated observation
 if username != "oper":
-    SIMULATED_DAT_PATH = f"/home/{username}/Documents/LV614_image_data/xst/20241119_210154_xst.dat"
+    SIMULATED_DAT_PATH = f"/home/{username}/Documents/LV614_image_data/20250521_070907_xst.dat"
     SIMULATED_OUTPUT_PATH = "tmp/simulated_observation_xst.dat"
 else:
     SIMULATED_DAT_PATH = f"/mnt/LOFAR0/xst/20241119_210154_xst.dat"
     SIMULATED_OUTPUT_PATH = "/mnt/LOFAR0/erasmus_2025/simulated_observation_xst.dat"
 
-SIMULATED_SUBBAND_MIN = 61
-SIMULATED_SUBBAND_MAX = 182
-
-
-'''
-SIMULATED_DAT_PATH = f"/home/jan/OneDrive/Escritorio/UPNA/8º Semestre (LV, Febrero 2025)/Bachelor's Thesis/Thesis/Repos/lofar-RFI-detection/lofarimaging/rfi_tools/20230111_072042_xst.dat"
-SIMULATED_SUBBAND_MIN = 120
-SIMULATED_SUBBAND_MAX = 284
-'''
+SIMULATED_SUBBAND_MIN = 51
+SIMULATED_SUBBAND_MAX = 461
 
 # Flask Server Configuration
 FLASK_PORT = 5000
