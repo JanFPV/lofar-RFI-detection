@@ -1,102 +1,163 @@
-# LOFAR Single Station Imaging for RFI Detection
+# LOFAR RFI Detection System
 
-This repository is part of my Bachelor's thesis project at VUAS, which aims to use LOFAR in standalone mode to detect and measure radio frequency interference (RFI) at the LOFAR station in Irbene.
+This repository enables real-time radio frequency interference (RFI) detection using a single LOFAR station in Irbene (LV614). It was developed as part of a Bachelor's thesis at Ventspils University of Applied Sciences (VUAS).
 
-Tested and run in Python 3.12
+The core functionality combines adapted modules from the official [lofarimaging](https://github.com/lofar-astron/lofarimaging) repository with newly developed tools for real-time visualization and user interaction. The system is written in Python 3.12 and can optionally be run using Docker with Docker Compose v2.
 
-## Installation
-To install and set up the environment, follow these steps:
+---
 
-```sh
-# Clone the repository
-git clone https://github.com/JanFPV/lofar-RFI-detection.git
-cd lofar-RFI-detection
+## Project Overview
 
-# Create a virtual environment
-python3.12 -m venv venv
+The code under `lofarimaging/` comes from the upstream `lofarimaging` repository, but has been **extensively modified** to:
 
-# Activate the virtual environment
-source venv/bin/activate  # On Windows, use 'venv\Scripts\activate'
+- Add new functionalities for near-field imaging
+- Improve integration with real-time workflows
+- Support user-defined configuration during observation
 
-# Install dependencies
-pip3.12 install -r requirements.txt
-```
+The subfolder `lofarimaging/rfi_tools/` contains all **original modules written for this thesis**, which:
 
-Alternatively, you can run the included setup script to perform all steps above automatically:
+- Wrap and extend functionality from the LOFAR imaging core
+- Provide tools to generate image sweeps
+- Enable real-time processing (including multithreaded handling of image generation)
 
-```sh
-./setup.sh
-```
+The `webapp/` directory contains both the backend and frontend code for a basic web interface that allows users to launch and monitor real-time observations, configure parameters, view live-generated images, and access logs. This interface integrates the tools in `rfi_tools` with Flask and a minimal HTML+JS frontend.
 
-> Note: The script assumes you have Python 3.12 installed and are already inside the `lofar-RFI-detection` directory.
+---
 
 ## Calibration Tables
+
 This repository includes calibration tables specifically for the Irbene LOFAR station, so no additional downloads are required.
 
-## Running Real Time observation
-To run a real observation, clone the repository and create an environment, then, start an observation and give the path as an argument to the following script:
-```sh
-python3.12 scripts/realtime_movie_generation.py path-to-dat-file
-```
+## Modes of Use
 
-## Running the Notebook
-Open the notebook in a Jupyter Notebook, JupyterLab, or VS Code instance:
+### 1. Jupyter Notebooks (Exploratory/Development)
 
-```sh
+Located in the `notebooks/` folder, these allow interactive exploration and visualization using modules from both `lofarimaging` and `rfi_tools`.
+
+**Setup:**
+
+```bash
+# Create a new Python virtual environment
+python3.12 -m venv venv
+
+# Activate the environment (Linux)
+source venv/bin/activate
+
+# Install project dependencies
+pip install -r requirements.txt
+
+# Launch Jupyter Notebooks
 jupyter notebook
-```
-or
-```sh
+
+# or open the folder directly in VS Code
 code .
 ```
 
-In VS Code, open the notebook file and ensure the Python extension is installed to run the cells interactively.
+Or use:
 
-To run all cells in the notebook:
-
-```
-Kernel > Restart & Run All
+```bash
+./envsetup.sh
 ```
 
-## Using Docker (Optional)
+### 2. Script Execution (Terminal-based)
 
-You can run the project in a self-contained Docker environment instead of installing Python and dependencies manually.
+- `scripts/realtime_movie_generation.py` – legacy real-time processor
+- `scripts/data_generator.py` – fake `.dat` file generator for testing
 
-### 1. Build the Docker image (optional)
+These are functional but mostly superseded by the Docker interface.
 
-```sh
-docker build -t lofar-rfi .
+### 3. Docker (Recommended)
+
+Launches a **web interface** with real-time processing and image viewing. Two modes:
+
+#### Production Mode (Prebuilt image from GHCR)
+
+```bash
+docker compose up
 ```
 
+#### 2. Local Development (Build from source)
 
-### 2. Run the script using Docker Compose
-
-If you have a directory (e.g., `/home/user/Desktop/test/`) containing the real-time observation file, you can mount it into the container and pass it as an argument:
-
-```sh
-docker-compose run --rm \
-  -v /home/user/Desktop/test:/data \
-  lofar
-```
-> Note: This command will take a few minutes the first time it is run.
-
-This will run the script as:
-```sh
-python scripts/realtime_movie_generation.py /data
+```bash
+docker compose -f docker-compose.local.yml up --build
 ```
 
-Inside the container, `/data` points to your local `/home/user/Desktop/test`.
+Access the interface at:
 
-> Note: This assumes your script reads a file from the directory and writes results back into the same path.
+```
+http://localhost:5000
+```
 
-### 3. Requirements
+---
 
-- Docker installed: https://docs.docker.com/get-docker/
-- Docker Compose: https://docs.docker.com/compose/
+## Instructions
 
-Docker support is optional and does not replace the ability to run the project via virtual environments or notebooks.
+### A. Clone and set up manually
+
+```bash
+git clone https://github.com/JanFPV/lofar-RFI-detection.git
+cd lofar-RFI-detection
+python3.12 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Or run:
+
+```bash
+./envsetup.sh
+```
+
+### B. Launch via Docker
+
+```bash
+# Run in production mode (prebuilt image)
+docker compose up
+
+# Run in development mode (build from source code)
+docker compose -f docker-compose.local.yml up --build
+```
+
+### C. Generate test data (optional)
+
+```bash
+python scripts/data_generator.py
+```
+
+---
+
+## System Requirements
+
+- Python 3.12 (for manual runs)
+- Docker + Docker Compose v2
+- Stable disk I/O (for writing .dat blocks)
+- No specific CPU performance requirements: the system allows adjusting the number of threads and the processing step to accommodate slower or faster machines
+
+---
+
+## Known Bugs and Limitations
+
+- `server.log` can grow large, affecting log viewer
+- Notebooks may use outdated structure
+- If an observation is started and no `.dat` file appears, pressing "Stop" will not terminate the process and a Docker restart may be required
+- If a non-existent folder is entered as input, the processing thread will crash
+
+---
+
+## Features Pending / Future Work
+
+- Create sweep video from web
+- Develop Web interface for postprocessing
+- UI polish for responsiveness
+
+---
+
+This repository supports modular, standalone RFI detection using LOFAR data. It bridges scientific imaging, real-time automation, and interactive visualization in a single framework. 
 
 ---
 
 This project extends LOFAR single-station imaging capabilities to enable standalone RFI detection and analysis, focusing on data collected at the Irbene LOFAR station.
 
+Feel free to explore, modify, or extend the system to match your research or operational needs.
+
+This project is distributed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for more details.
