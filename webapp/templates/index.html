@@ -147,7 +147,6 @@
     </section>
 
     <section id="status-section">
-      <h2>System Status</h2>
       <div id="system-status-label" style="font-size: 22px; font-weight: bold;">Status: ...</div>
       <div id="status-block">Loading status...</div>
     </section>
@@ -258,7 +257,6 @@ function updateStatus() {
           <li>Height: ${status.height_m} m</li>
           <li>Extent: ±${status.extent} m</li>
         </ul>
-        <br>
         <h4>Runtime</h4>
         <ul>
           <li>Current .dat file: ${status.current_dat_file}</li>
@@ -269,6 +267,23 @@ function updateStatus() {
           <li>Avg. processing time: ${status.avg_processing_time} s</li>
         </ul>
       `;
+      if (status.tracking && status.tracking.timestamp) {
+        container.innerHTML += `
+          <h4>Max Power Tracking</h4>
+          <ul>
+            <li>Time: ${status.tracking.timestamp}</li>
+            <li>Subband: ${status.tracking.subband}</li>
+            <li>Lat/Lon: ${status.tracking.lat}, ${status.tracking.lon}</li>
+            <li>X/Y (m): ${status.tracking.x_m}, ${status.tracking.y_m}</li>
+            <li>Power: ${status.tracking.power_db} dB</li>
+          </ul>
+        `;
+      } else {
+        container.innerHTML += `<p style="color:#888; font-style:italic;">No tracking data yet</p>`;
+      }
+      if (status.velocity_mps !== null && status.velocity_mps !== undefined) {
+        container.innerHTML += `<p><strong>Velocity:</strong> ${status.velocity_mps} m/s</p>`;
+      }
     });
 }
 

@@ -83,12 +83,13 @@ def last_images():
 
     obs_name = os.path.basename(state.observation_path)
 
-    if state.is_observing:
+    # Usa image_log si tiene contenido (aunque ya no esté observando)
+    if not state.image_log.empty:
         log = state.image_log.copy()
-        # print(f"[LIVE] Returning in-memory log: {len(log)} entries")
+        logger.debug(f"[LIVE] Returning in-memory log: {len(log)} entries")
     else:
         log = state.past_observations.get(obs_name)
-        # print(f"[LOG FILE] Returning saved log for {obs_name}: {len(log) if log is not None else 0} entries")
+        logger.debug(f"[LOG FILE] Returning saved log for {obs_name}: {len(log) if log is not None else 0} entries")
 
     if log is None or log.empty:
         return jsonify([])

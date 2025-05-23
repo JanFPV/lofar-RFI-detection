@@ -5,11 +5,15 @@ import pandas as pd
 import numpy as np
 import threading
 import datetime
+import math
 import logging
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import config as app_config
+from lofarimaging import make_xst_plots
+from lofarimaging.singlestationutil import tracking_lock
+
 
 # Execution state
 is_observing = False
@@ -36,6 +40,7 @@ current_dat_file = ""
 subband_range = (None, None)
 pending_tasks = 0
 pending_lock = threading.Lock()
+velocity = 0
 
 def add_image_entry(filename, subband, status="processed", duration=None, frame_index=None, timestamp=None):
     global image_log, last_subband
@@ -55,6 +60,57 @@ def add_image_entry(filename, subband, status="processed", duration=None, frame_
 
 def get_status():
     avg_time = round(np.mean(processing_times[-10:]), 2) if processing_times else 0
+
+    last_tracking = None
+    try:
+        with tracking_lock:
+            if make_xst_plots.tracking_history:
+                last = make_xst_plots.tracking_history[-1]
+                last_tracking = {
+                    "timestamp": last["timestamp"],
+                    "lat": round(last["lat"], 6),
+                    "lon": round(last["lon"], 6),
+                    "x_m": round(last["x_m"], 2),
+                    "y_m": round(last["y_m"], 2),
+                    "power_db": round(last["power_db"], 2),
+                    "subband": last["subband"]
+                }
+
+    except Exception as e:
+        last_tracking = {"error": str(e)}
+
+    velocity = None
+    try:
+        with tracking_lock:
+            history = make_xst_plots.tracking_history
+            velocities = []
+            for i in range(len(history) - 1, 0, -1):
+                try:
+                    p1 = history[i - 1]
+                    p2 = history[i]
+                    t1 = datetime.datetime.fromisoformat(p1["timestamp"])
+                    t2 = datetime.datetime.fromisoformat(p2["timestamp"])
+                    dt = (t2 - t1).total_seconds()
+                    if dt <= 0:
+                        continue
+
+                    dx = p2["x_m"] - p1["x_m"]
+                    dy = p2["y_m"] - p1["y_m"]
+                    v = math.sqrt(dx**2 + dy**2) / dt
+                    velocities.append(v)
+
+                    if len(velocities) == 4:
+                        break
+                except Exception as e:
+                    logger.debug(f"[STATUS] Skipped velocity segment: {e}")
+                    continue
+
+            if velocities:
+                velocity = round(sum(velocities) / len(velocities), 2)
+
+    except Exception as e:
+        velocity = None
+
     return {
         "status": system_status,
         "last_block": last_block,
@@ -67,6 +123,8 @@ def get_status():
         "step": config.get("step"),
         "height_m": config.get("height_m"),
         "extent": config.get("extent"),
+        "tracking": last_tracking,
+        "velocity_mps": velocity
     }
 
 
@@ -126,13 +184,19 @@ def load_all_logs_by_observation(base_dir="webapp/static/images"):
 observation_path = None
 
 def create_observation_directory(base_dir="webapp/static/images"):
-    global observation_path
+    global observation_path, image_log
+
     timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     observation_path = os.path.join(base_dir, timestamp)
 
     os.makedirs(os.path.join(observation_path, "blocks"), exist_ok=True)
     os.makedirs(os.path.join(observation_path, "images"), exist_ok=True)
     os.makedirs(os.path.join(observation_path, "movies"), exist_ok=True)
+
+    # Restart image log for this session
+    image_log = pd.DataFrame(columns=[
+        "timestamp", "filename", "subband", "status", "duration", "frame_index"
+    ])
 
     print(f"[SETUP] Created observation directory at {observation_path}")
     logger.info(f"[SETUP] Created observation directory at {observation_path}")

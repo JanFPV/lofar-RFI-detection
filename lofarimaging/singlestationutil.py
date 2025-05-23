@@ -3,6 +3,7 @@
 import os
 import datetime
 from typing import List, Dict, Tuple, Union
+import threading
 
 import numpy as np
 from packaging import version
@@ -50,6 +51,8 @@ GENERIC_REMOTE_201512 = [0, 13, 12, 4, 11, 11, 7, 8, 2, 7, 11, 2, 10, 2, 6, 3, 8
                          10, 15, 8, 2, 12, 13, 9, 13, 4, 5, 5, 12, 5, 5, 9, 11, 15, 12, 2, 15]
 
 assert version.parse(lofarantpos.__version__) >= version.parse("0.4.0")
+
+tracking_lock = threading.Lock()
 
 
 def sb_from_freq(freq: float, rcu_mode: Union[int, str] = 1) -> int:
@@ -812,13 +815,27 @@ def make_xst_plots(xst_data: np.ndarray,
     [maxpixel_p, maxpixel_q, _] = pqr_to_xyz.T @ np.array([maxpixel_x, maxpixel_y, height])
     maxpixel_lon, maxpixel_lat, _ = lofargeotiff.pqr_to_longlatheight([maxpixel_p, maxpixel_q], station_name)
 
+    # Store tracking data in global state or return it
+    if not hasattr(make_xst_plots, "tracking_history"):
+        make_xst_plots.tracking_history = []
+
+    with tracking_lock:
+        make_xst_plots.tracking_history.append({
+            "timestamp": obstime.isoformat(),
+            "lat": float(maxpixel_lat),
+            "lon": float(maxpixel_lon),
+            "x_m": float(maxpixel_x),
+            "y_m": float(maxpixel_y),
+            "power_db": float(maxpower_dB),
+            "subband": int(subband)
+        })
+
+
     # Show location of maximum
     #print(f"Maximum of {maxpower_dB:.2f} dB at {maxpixel_x:.0f}m east, {maxpixel_y:.0f}m north of station center " +
     #      f"(lat/long {maxpixel_lat:.5f}, {maxpixel_lon:.5f})")
 
     # Mark ground_img maximum with a red circle around it
-
-
     ground_fig, folium_overlay = make_ground_plot(ground_img, background_map, extent,
                                                   title=f"Near field image for {station_name}",
                                                   subtitle=f"SB {subband} ({freq / 1e6:.1f} MHz), {str(obstime)[:16]}, {height:.1f} m",
