@@ -2,11 +2,12 @@
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
-# Define a temporary directory and redirect cache
-export TMPDIR="/mnt/LOFAR0/tmp"
-export PIP_CACHE_DIR="$TMPDIR/pip-cache"
-mkdir -p "$TMPDIR"
-mkdir -p "$PIP_CACHE_DIR"
+if [ -d "/mnt/LOFAR0" ]; then
+  export TMPDIR="/mnt/LOFAR0/tmp"
+  export PIP_CACHE_DIR="$TMPDIR/pip-cache"
+  mkdir -p "$TMPDIR"
+  mkdir -p "$PIP_CACHE_DIR"
+fi
 
 # Create the virtual environment only if it does not exist
 if [ ! -d "venv" ]; then

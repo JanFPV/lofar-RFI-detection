@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Variables de entorno para Flask
+# Environment variables for Flask
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=webapp/app.py
@@ -8,10 +8,10 @@ ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5000
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Crear carpeta de trabajo
+# Create working directory
 WORKDIR /app
 
-# Instala dependencias del sistema
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libexpat1 \
     gdal-bin \
@@ -23,14 +23,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar dependencias y código
+# Copy dependencies and code
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Exponer el puerto del servidor
+# Expose server port
 EXPOSE 5000
 
-# Comando por defecto
+# Default command
 CMD ["python", "webapp/app.py"]

@@ -54,13 +54,3 @@ def start_observation():
 
     thread = threading.Thread(target=run, daemon=True)
     thread.start()
-
-
-# NOTE: Output and temp directory are set to Flask's static folder for image visibility
-# This allows the generated images to be displayed directly on the web interface.
-
-# NOTE: There is no feedback about processing state (e.g., number of images processed).
-# Adding counters or logs shown in the web UI could be useful for tracking progress.
-
-# NOTE: Error handling is printed to the console only.
-# In future versions, errors could be logged or shown in the web interface.
