@@ -10,7 +10,7 @@ The core functionality combines adapted modules from the official [lofarimaging]
 
 The code under `lofarimaging/` comes from the upstream `lofarimaging` repository, but has been **extensively modified** to:
 
-- Add new functionalities for near-field imaging
+- Add new functionalities for near-field imaging, such as source tracking
 - Improve integration with real-time workflows
 - Support user-defined configuration during observation
 
@@ -23,10 +23,6 @@ The subfolder `lofarimaging/rfi_tools/` contains all **original modules written 
 The `webapp/` directory contains both the backend and frontend code for a basic web interface that allows users to launch and monitor real-time observations, configure parameters, view live-generated images, and access logs. This interface integrates the tools in `rfi_tools` with Flask and a minimal HTML+JS frontend.
 
 ---
-
-## Calibration Tables
-
-This repository includes calibration tables specifically for the Irbene LOFAR station, so no additional downloads are required.
 
 ## Modes of Use
 
@@ -70,7 +66,7 @@ These are functional but mostly superseded by the Docker interface.
 
 Launches a **web interface** with real-time processing and image viewing. Two modes:
 
-#### Production Mode (Prebuilt image from GHCR)
+#### Regular User (Prebuilt image from GHCR)
 
 ```bash
 docker compose up
@@ -92,7 +88,7 @@ http://localhost:5000
 
 ## Instructions
 
-### A. Clone and set up manually
+### 1. Clone and set up manually
 
 ```bash
 git clone https://github.com/JanFPV/lofar-RFI-detection.git
@@ -108,7 +104,7 @@ Or run:
 ./envsetup.sh
 ```
 
-### B. Launch via Docker
+### 2. Launch via Docker
 
 ```bash
 # Run in production mode (prebuilt image)
@@ -118,7 +114,7 @@ docker compose up
 docker compose -f docker-compose.local.yml up --build
 ```
 
-### C. Generate test data (optional)
+### 3. Generate fake observation data (optional)
 
 ```bash
 python scripts/data_generator.py
@@ -126,37 +122,39 @@ python scripts/data_generator.py
 
 ---
 
+## Calibration Tables
+
+This repository includes calibration tables specifically for the Irbene LOFAR station, so no additional downloads are required.
+
+---
+
 ## System Requirements
 
 - Python 3.12 (for manual runs)
-- Docker + Docker Compose v2
+- Docker + Docker Compose v2 (for web interface)
 - Stable disk I/O (for writing .dat blocks)
-- No specific CPU performance requirements: the system allows adjusting the number of threads and the processing step to accommodate slower or faster machines
+- No specific CPU performance requirements: the system allows adjusting the number of threads and the block discarding step to accommodate slower or faster machines
 
 ---
 
 ## Known Bugs and Limitations
 
 - `server.log` can grow large, affecting log viewer
-- Notebooks may use outdated structure
 - If an observation is started and no `.dat` file appears, pressing "Stop" will not terminate the process and a Docker restart may be required
-- If a non-existent folder is entered as input, the processing thread will crash
+- If a non-existent folder is entered as input, the processing thread will crash and a Docker restart may be required
+- Notebooks may use outdated structure
 
 ---
 
 ## Features Pending / Future Work
 
-- Create sweep video from web
-- Develop Web interface for postprocessing
+- Create sweep videos from web interface (modules are ready, but integration is pending)
+- Develop Web interface for data postprocessing
 - UI polish for responsiveness
 
 ---
 
-This repository supports modular, standalone RFI detection using LOFAR data. It bridges scientific imaging, real-time automation, and interactive visualization in a single framework. 
-
----
-
-This project extends LOFAR single-station imaging capabilities to enable standalone RFI detection and analysis, focusing on data collected at the Irbene LOFAR station.
+This repository supports modular, standalone RFI detection using LOFAR data. It bridges scientific imaging, real-time automation, and interactive visualization in a single framework. It allows RFI detection and analysis, focusing on data collected at the Irbene LOFAR station.
 
 Feel free to explore, modify, or extend the system to match your research or operational needs.
 
