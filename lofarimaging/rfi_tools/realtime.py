@@ -290,26 +290,32 @@ def obs_parser(obs_file):
 def get_subbands(input_path):
     # Find the observation file in the input path
     time.sleep(0.5)
-    obs_files = [f for f in os.listdir(input_path) if f.endswith(('.h', '.sh'))]
-    if obs_files:
-        obs_file = os.path.join(input_path, obs_files[0])  # Use the first matching file
-    else:
-        raise FileNotFoundError("No observation file (.h, .sh) found in the input path.")
+    if not config.MANUAL_SUBBANDS:
+        obs_files = [f for f in os.listdir(input_path) if f.endswith(('.h', '.sh'))]
+        if obs_files:
+            obs_file = os.path.join(input_path, obs_files[0])  # Use the first matching file
+        else:
+            raise FileNotFoundError("No observation file (.h, .sh) found in the input path.")
 
-    obs_data = obs_parser(obs_file)
+        obs_data = obs_parser(obs_file)
 
-    if 'subbands' in obs_data:
-        # Convert subbands string to a list of integers
-        subbands = list(map(int, obs_data['subbands'].split(':')))
-        min_subband = min(subbands)
-        max_subband = max(subbands)
-        print(f"Min subband: {min_subband}, Max subband: {max_subband}")
+        if 'subbands' in obs_data:
+            # Convert subbands string to a list of integers
+            subbands = list(map(int, obs_data['subbands'].split(':')))
+            min_subband = min(subbands)
+            max_subband = max(subbands)
+            print(f"Min subband: {min_subband}, Max subband: {max_subband}")
+        else:
+            # Allow manual input for subbands if not found in the observation file
+            print("No subbands information found in the observation file. Please input manually.")
+            min_subband = int(input("Enter the minimum subband: "))
+            max_subband = int(input("Enter the maximum subband: "))
+            if min_subband >= max_subband or min_subband < 0 or max_subband < 0:
+                raise ValueError("No subbands information found in the observation file.")
     else:
-        # Allow manual input for subbands if not found in the observation file
-        print("No subbands information found in the observation file. Please input manually.")
-        min_subband = int(input("Enter the minimum subband: "))
-        max_subband = int(input("Enter the maximum subband: "))
-        if min_subband >= max_subband or min_subband < 0 or max_subband < 0:
-            raise ValueError("No subbands information found in the observation file.")
+        # Manually set subbands:
+        print("Using manual subbands from config.")
+        min_subband = config.MIN_SUBBAND
+        max_subband = config.MAX_SUBBAND
 
     return min_subband, max_subband

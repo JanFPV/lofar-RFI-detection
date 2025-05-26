@@ -5,6 +5,7 @@ services:
       - "5000:5000"
     volumes:
       - ./webapp/static/images:/app/webapp/static/images
+      - ./config.py:/app/config.py
       - ./tmp:/data
     environment:
       - FLASK_ENV=development

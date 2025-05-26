@@ -5,6 +5,7 @@ services:
       - "5000:5000"
     volumes:
       - ./webapp/static/images:/app/webapp/static/images
+      - ./config.py:/app/config.py
       - type: bind
         source: /mnt/LOFAR0/erasmus_2025
         target: /data
