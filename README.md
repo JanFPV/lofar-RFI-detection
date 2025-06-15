@@ -139,10 +139,12 @@ This repository includes calibration tables specifically for the Irbene LOFAR st
 
 ## Known Bugs and Limitations
 
-- `server.log` can grow large, affecting log viewer
-- If an observation is started and no `.dat` file appears, pressing "Stop" will not terminate the process and a Docker restart may be required
-- If a non-existent folder is entered as input, the processing thread will crash and a Docker restart may be required
-- Notebooks may use outdated structure
+- **Image Scale Normalization:** The intensity scale currently adjusts dynamically for each individual image. This can cause minor, insignificant interference to appear magnified when no strong signal is present. A manual override for the intensity scale or a global normalization system that applies a consistent scale across multiple images should be implemented.
+- **Incorrect Timestamping in Real-Time Observations:** During live data capture, data blocks are sometimes received in bursts rather than steadily at one per second. The current system assigns a timestamp upon arrival, which causes multiple blocks to receive the same timestamp, leading to data being overwritten and lost. This should be fixed by assigning timestamps sequentially (e.g., `previous_timestamp + 1s`) to ensure data integrity.
+- **Excessive Log Growth:** The `server.log` file can grow indefinitely, which can impact the performance of the log viewer. Log rotation should be implemented.
+- **Process Termination Failure:** If an observation is started but no `.dat` file is generated, the "Stop" button may fail to terminate the process, potentially requiring a manual restart of the Docker container.
+- **Crash on Invalid Directory:** Providing a path to a non-existent directory as input can cause the processing thread to crash, requiring a Docker restart to recover.
+- **Outdated Notebooks:** Some of the included Jupyter notebooks may be based on an older project structure and might require modifications to function correctly with the current version.
 
 ---
 
@@ -151,6 +153,8 @@ This repository includes calibration tables specifically for the Irbene LOFAR st
 - Create sweep videos from web interface (modules are ready, but integration is pending)
 - Develop Web interface for data postprocessing
 - UI polish for responsiveness
+- Implement database integration for better data management
+- Add user login to secure access and personalize experience
 
 ---
 
